@@ -1,0 +1,6 @@
+bdshare>=1.2.7
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pandas
+requests
+beautifulsoup4
