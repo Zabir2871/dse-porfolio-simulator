@@ -1,13 +1,30 @@
 """SQLite storage (simulator.db): users, portfolio states, transactions, price ticks, daily prices, company info."""
-import hashlib, json, re, secrets, sqlite3, threading, time
+import hashlib, json, os, re, secrets, sqlite3, threading, time
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 DHAKA = ZoneInfo("Asia/Dhaka")
-DB_PATH = Path(__file__).parent / "simulator.db"
 _lock = threading.RLock()
-_db = sqlite3.connect(DB_PATH, check_same_thread=False)
+
+
+def _open():
+    """Use simulator.db next to the code; on read-only hosts (Vercel) fall back to /tmp (temporary!)."""
+    for p in (os.environ.get("DSE_DB"), str(Path(__file__).parent / "simulator.db"), "/tmp/simulator.db"):
+        if not p:
+            continue
+        try:
+            c = sqlite3.connect(p, check_same_thread=False)
+            c.execute("create table if not exists _probe(x)")
+            c.commit()
+            return c, p
+        except Exception:
+            continue
+    return sqlite3.connect(":memory:", check_same_thread=False), ":memory:"
+
+
+_db, DB_PATH = _open()
+EPHEMERAL = DB_PATH in (":memory:", "/tmp/simulator.db")  # data is lost when the host recycles
 _db.row_factory = sqlite3.Row
 _db.executescript("""
 create table if not exists users(name text primary key, created_at text);

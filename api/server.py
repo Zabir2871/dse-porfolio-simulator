@@ -1,6 +1,7 @@
 """
 DSE live API + database for the portfolio simulator.   python server.py   ->  http://localhost:3000
 """
+import os
 import threading
 from pathlib import Path
 from fastapi import FastAPI, Header, HTTPException, Query, Request
@@ -21,6 +22,8 @@ def current():
 
 @app.on_event("startup")
 def start_collector():
+    if os.environ.get("VERCEL"):  # serverless: no background threads, so no price recording
+        return
     threading.Thread(target=store.background, args=(current, market_open), daemon=True).start()
 
 
@@ -120,7 +123,7 @@ def c_one(symbol: str):
 
 @app.get("/healthz")
 def health():
-    return {"ok": True, "marketOpen": market_open()}
+    return {"ok": True, "marketOpen": market_open(), "db": store.DB_PATH, "dataIsTemporary": store.EPHEMERAL}
 
 
 HERE = Path(__file__).resolve().parent

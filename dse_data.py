@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 BASE = Path(__file__).parent
 DHAKA = ZoneInfo("Asia/Dhaka")
-STATE_FILE = BASE / "state.json"
+STATE_FILE = (Path("/tmp") if os.environ.get("VERCEL") else BASE) / "state.json"
 
 _ALIASES = {  # normalised column name -> our field
     "symbol": "symbol", "tradingcode": "symbol", "code": "symbol",
@@ -63,7 +63,10 @@ def trading_date(signature):
     prev = datetime.strptime(st["date"], "%Y-%m-%d").date() if st.get("date") else None
     if prev and guess > prev and st.get("sig") == signature:
         guess = prev
-    STATE_FILE.write_text(json.dumps({"date": guess.isoformat(), "sig": signature}))
+    try:
+        STATE_FILE.write_text(json.dumps({"date": guess.isoformat(), "sig": signature}))
+    except OSError:
+        pass  # read-only host (e.g. Vercel)
     return guess
 
 
