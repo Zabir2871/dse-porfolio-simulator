@@ -36,3 +36,8 @@ Created automatically next to server.py. Tables: `users`, `states` (each user's 
 - Company details are fetched once in the background (about 0.7 s per company, so roughly 5 minutes the first time). Please check DSE's terms before running it.
 - Keep the server running 10:00-14:30 Dhaka (Sun-Thu) to build intraday history. Back up by copying `simulator.db`.
 - Inspect it with any SQLite viewer, e.g. https://sqlitebrowser.org
+
+## Accounts and "which source has today's prices?"
+- `default` is a shared test account with no password. Create your own account in Settings: usernames are unique (case-insensitive), passwords are stored salted and hashed, and each account's data can only be read with its own sign-in token. Run the server on localhost only.
+- Prices refresh when the page loads and when you press Refresh (no background polling in the browser).
+- `python diagnose.py` shows the date DSE's site says its prices are from, whether the new JSON API is reachable, and which source the server uses. If the app shows an amber "These prices are from ..." banner, DSE's feed itself has not published newer prices.

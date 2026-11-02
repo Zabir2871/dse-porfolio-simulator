@@ -1,5 +1,5 @@
 """SQLite storage (simulator.db): users, portfolio states, transactions, price ticks, daily prices, company info."""
-import json, re, sqlite3, threading, time
+import hashlib, json, re, secrets, sqlite3, threading, time
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -11,6 +11,8 @@ _db = sqlite3.connect(DB_PATH, check_same_thread=False)
 _db.row_factory = sqlite3.Row
 _db.executescript("""
 create table if not exists users(name text primary key, created_at text);
+create table if not exists accounts(key text primary key, name text, salt text, pw_hash text, created_at text);
+create table if not exists sessions(token text primary key, user text, created_at text);
 create table if not exists states(user text primary key, json text, updated_at text);
 create table if not exists transactions(user text, id text, ts text, type text, symbol text, qty real, price real, fee real, total real, pnl real, note text, primary key(user,id));
 create table if not exists ticks(ts integer, date text, symbol text, ltp real, ycp real, high real, low real, volume real);
@@ -50,6 +52,42 @@ def put_state(user, js):
                         [(user, t.get("id"), t.get("ts"), t.get("type"), t.get("symbol"), t.get("qty"), t.get("price"),
                           t.get("fee"), t.get("total"), t.get("pnl"), t.get("note")) for t in st.get("txns", [])])
         _db.commit()
+
+
+# ---- accounts: unique names, salted password hashes, per-user session tokens ----
+def _hash(pw, salt):
+    return hashlib.pbkdf2_hmac("sha256", pw.encode(), bytes.fromhex(salt), 150000).hex()
+
+def _session(name):
+    tok = secrets.token_urlsafe(24)
+    q("insert into sessions values(?,?,?)", (tok, name, datetime.now(DHAKA).isoformat()))
+    return tok
+
+def register(name, pw):
+    name = name.strip()
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{3,30}", name) or name.lower() == "default":
+        raise ValueError("Username must be 3-30 letters, numbers, . _ - (and not 'default').")
+    if len(pw) < 4:
+        raise ValueError("Password must be at least 4 characters.")
+    if q("select 1 from accounts where key=?", (name.lower(),)):
+        raise KeyError("That username is already taken.")
+    salt = secrets.token_hex(16)
+    q("insert into accounts values(?,?,?,?,?)", (name.lower(), name, salt, _hash(pw, salt), datetime.now(DHAKA).isoformat()))
+    add_user(name)
+    return name, _session(name)
+
+def login(name, pw):
+    r = q("select * from accounts where key=?", (name.strip().lower(),), one=True)
+    if not r or not secrets.compare_digest(r["pw_hash"], _hash(pw, r["salt"])):
+        raise PermissionError("Wrong username or password.")
+    return r["name"], _session(r["name"])
+
+def allowed(user, token):
+    """'default' is the shared test account (no password). Everyone else needs their own token."""
+    if user == "default":
+        return True
+    r = q("select user from sessions where token=?", (token or "",), one=True)
+    return bool(r) and r["user"] == user
 
 
 # ---- market history ----

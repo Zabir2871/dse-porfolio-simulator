@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DSE Portfolio Simulator</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<style>
+:root{--ac:#0a84ff;--bg1:#0a0f24;--bg2:#1c1243;--tx:#e8edf7;--mut:#9aa7bd;--gl:rgba(255,255,255,.07);--glb:rgba(255,255,255,.16);--sh:rgba(0,0,0,.35);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html[data-theme=light]{--bg1:#e6ecfb;--bg2:#fbe6f2;--tx:#0f172a;--mut:#64748b;--gl:rgba(255,255,255,.55);--glb:rgba(255,255,255,.9);--sh:rgba(60,70,120,.2);color-scheme:light}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','IBM Plex Sans',system-ui,sans-serif;background:linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed}
+body:before,body:after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(70px);opacity:.5;pointer-events:none}
+body:before{width:46vmax;height:46vmax;left:-12vmax;top:-10vmax;background:var(--ac);animation:fl 22s ease-in-out infinite alternate}
+body:after{width:40vmax;height:40vmax;right:-10vmax;bottom:-12vmax;background:#bf5af2;animation:fl 28s ease-in-out infinite alternate-reverse}
+@keyframes fl{to{transform:translate(8vmax,6vmax) scale(1.15)}}
+@media (prefers-reduced-motion:reduce){body:before,body:after{animation:none}}
+.num{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.panel{background:var(--gl);border:1px solid var(--glb);-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);box-shadow:0 8px 32px var(--sh),inset 0 1px 0 rgba(255,255,255,.28)}
+.gd .lens{backdrop-filter:blur(10px) saturate(180%) url(#lg)}
+.rounded-md{border-radius:999px}.rounded-lg{border-radius:22px}.rounded-xl{border-radius:28px}textarea{border-radius:18px!important}
+.bg-sky-600{background:var(--ac)!important}.hover\:bg-sky-500:hover{filter:brightness(1.15)}.text-sky-300{color:var(--ac)!important}.border-sky-500:focus,.focus\:border-sky-500:focus{border-color:var(--ac)!important}
+.bg-slate-900{background:var(--gl)!important}.bg-slate-950{background:rgba(10,15,36,.55)!important;-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px)}
+html[data-theme=light] .bg-slate-950{background:rgba(245,247,255,.7)!important}
+.border-slate-700,.border-slate-800{border-color:var(--glb)!important}
+.text-slate-400,.text-slate-500,.text-slate-600{color:var(--mut)!important}.text-slate-300,.text-slate-200{color:var(--tx)!important}
+.bg-black\/70,.bg-black\/60{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+html .scrim{background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%)}
+.scrim>.panel,.menu{background:rgba(20,26,54,.8)!important}html[data-theme=light] .scrim>.panel,html[data-theme=light] .menu{background:rgba(255,255,255,.88)!important}
+button{transition:transform .15s,filter .15s}button:active{transform:scale(.95)}
+input,textarea,select{color:var(--tx)}select{background:var(--gl);border:1px solid var(--glb);border-radius:999px;padding:6px 12px}option{color:#111}
+th{font-weight:500;color:var(--mut);font-size:12px;text-align:right;padding:8px 12px;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:9px 12px;text-align:right;white-space:nowrap;border-top:1px solid var(--glb);font-size:13.5px}
+tbody tr:hover{background:rgba(255,255,255,.1)}
+</style>
+<style id="rptcss">
+.rptwrap{max-width:900px;margin:0 auto}
+.rpt{background:#fff;color:#111827;padding:28px;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:13px;line-height:1.45;border-radius:8px}
+.rpt h1{font-size:22px;margin:0 0 2px}.rpt h2{font-size:15px;margin:22px 0 8px;border-bottom:1px solid #d1d5db;padding-bottom:4px}
+.rpt table{width:100%;border-collapse:collapse}.rpt th,.rpt td{padding:5px 8px;border:0;border-bottom:1px solid #e5e7eb;text-align:right;white-space:nowrap;font-size:12px;font-variant-numeric:tabular-nums}
+.rpt th{color:#4b5563;font-weight:600;background:#f9fafb}.rpt th:first-child,.rpt td:first-child{text-align:left}.rpt tbody tr:hover{background:transparent}
+.rtbl{overflow-x:auto}.rkpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.rkpi>div{border:1px solid #e5e7eb;border-radius:6px;padding:8px}.rkpi b{font-size:15px}
+.rmuted{color:#6b7280;font-size:11px}.rpt .g{color:#047857}.rpt .l{color:#be123c}
+@media print{body{background:#fff}body *{visibility:hidden}.rptwrap,.rptwrap *{visibility:visible}.rptwrap{position:absolute;left:0;top:0;width:100%;max-width:none}.rpt{padding:0}}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body><svg width="0" height="0" style="position:absolute"><filter id="lg" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="3" result="n"/><feGaussianBlur in="n" stdDeviation="2" result="b"/><feDisplacementMap in="SourceGraphic" in2="b" scale="26" xChannelSelector="R" yChannelSelector="G"/></filter></svg><div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useRef}=React;
+const FEE=0.0035, KEY='dse-sim-v1';
+const SEED=[
+['GP','Grameenphone Ltd.','A','Telecommunication',285.5],['SQURPHARMA','Square Pharmaceuticals','A','Pharmaceuticals',216.4],
+['BATBC','British American Tobacco BD','A','Food & Allied',330.2],['BXPHARMA','Beximco Pharmaceuticals','A','Pharmaceuticals',96.8],
+['RENATA','Renata Ltd.','A','Pharmaceuticals',561.3],['BRACBANK','BRAC Bank Ltd.','A','Bank',38.4],
+['ISLAMIBANK','Islami Bank Bangladesh','A','Bank',32.1],['BEXIMCO','Beximco Ltd.','A','Miscellaneous',78.6],
+['ROBI','Robi Axiata Ltd.','A','Telecommunication',26.7],['LHBL','LafargeHolcim Bangladesh','A','Cement',62.9],
+['WALTONHIL','Walton Hi-Tech Industries','A','Engineering',541.0],['BERGERPBL','Berger Paints Bangladesh','A','Paints',1652.4],
+['MARICOBD','Marico Bangladesh','A','Food & Allied',2310.0],['OLYMPIC','Olympic Industries','A','Food & Allied',135.7],
+['ICB','Investment Corp. of Bangladesh','A','Financial Institution',105.2],['CITYBANK','The City Bank Ltd.','A','Bank',21.3],
+['POWERGRID','Power Grid Co. of BD','A','Fuel & Power',52.6],['BSRMLTD','BSRM Ltd.','A','Engineering',60.4],
+['SUMITPOWER','Summit Power Ltd.','B','Fuel & Power',40.8],['UNIQUEHRL','Unique Hotel & Resorts','B','Travel & Leisure',45.2],
+['DUTCHBANGL','Dutch-Bangla Bank','Z','Bank',55.0]];
+const fmt=(n,d=2)=>Number(n).toLocaleString(CFG.nf||'en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const tk=n=>(CFG.cur||'Tk')+' '+fmt(n);
+const r1=n=>Math.round(n*10)/10, r2=n=>Math.round(n*100)/100;
+const sg=n=>(n>0?'+':'')+fmt(n);
+const cls=n=>n>0.0001?'text-emerald-400':n<-0.0001?'text-rose-400':'text-slate-400';
+const need=c=>c==='Z'?3:2;
+const limits=m=>({up:r1(m.close*1.1),lo:r1(m.close*0.9)});
+let DATES={},LIVE_OK=false,CFG={};
+const authH=()=>{try{const t=localStorage.getItem('dse-token');return t?{'X-Token':t}:{}}catch(e){return {}}};
+const lab=iso=>{const [y,m,d]=iso.split('-').map(Number);return new Date(Date.UTC(y,m-1,d)).toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});};
+function dateOf(day){if(DATES[day])return DATES[day];const d=new Date(Date.UTC(2026,10,1));let n=day;while(n>0){d.setUTCDate(d.getUTCDate()+1);const w=d.getUTCDay();if(w!==5&&w!==6)n--;}
+ return d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});}
+const gauss=()=>(Math.random()+Math.random()+Math.random()-1.5)*2;
+function tick(m){return m.map(s=>{const close=s.ltp;const r=Math.max(-.095,Math.min(.095,gauss()*.018));const ltp=r1(close*(1+r));
+ const {up,lo}=limits({close});const hi=Math.min(up,r1(Math.max(ltp,close)*(1+Math.random()*.012)));const low=Math.max(lo,r1(Math.min(ltp,close)*(1-Math.random()*.012)));
+ return {...s,close,ltp,high:hi,low,chg:(ltp-close)/close*100,hist:[...(s.hist||[]),ltp].slice(-60),hi52:Math.max(s.hi52||ltp,ltp),lo52:Math.min(s.lo52||ltp,ltp)};});}
+const extra=p=>{const a=[p];for(let i=0;i<250;i++)a.unshift(r1(Math.max(1,a[0]/(1+gauss()*.015))));return {hist:a.slice(-30),hi52:Math.max(...a),lo52:Math.min(...a),pe:r1(6+Math.random()*22)};};
+const seedMarket=()=>SEED.map(([symbol,name,cat,sector,p])=>({symbol,name,cat,sector,ltp:p,close:p,high:p,low:p,chg:0,...extra(p)}));
+const META=Object.fromEntries(SEED.map(([symbol,name,cat,sector])=>[symbol,{name,sector}]));
+const MON='JanFebMarAprMayJunJulAugSepOctNovDec';
+function parseAsOf(a){const m=(a||'').match(/([A-Za-z]{3})[a-z]*\s+(\d{1,2}),\s*(\d{4})/);if(!m)return null;const i=MON.indexOf(m[1][0].toUpperCase()+m[1].slice(1).toLowerCase());if(i<0)return null;return `${m[3]}-${String(i/3+1).padStart(2,'0')}-${String(+m[2]).padStart(2,'0')}`;}
+function tdBetween(a,b){const d=new Date(a+'T00:00:00Z'),e=new Date(b+'T00:00:00Z');let n=0;for(let i=0;i<400&&d<e;i++){d.setUTCDate(d.getUTCDate()+1);const w=d.getUTCDay();if(w!==5&&w!==6)n++;}return n;}
+function mergeLive(old,stocks,newDay){const by=Object.fromEntries(old.map(m=>[m.symbol,m])),seen={};
+ const mk=stocks.map(x=>{seen[x.symbol]=1;const o=by[x.symbol]||{},t=META[x.symbol]||{},pr=o.hist||[];
+  const hist=(newDay||!pr.length?[...pr,x.ltp]:[...pr.slice(0,-1),x.ltp]).slice(-60);
+  return {symbol:x.symbol,name:x.name||o.name||t.name||x.symbol,sector:x.sector||o.sector||t.sector||'Other',cat:x.category,ltp:x.ltp,close:x.ycp,high:x.high,low:x.low,chg:x.changePercent,pe:x.pe??o.pe??null,hist,hi52:Math.max(o.hi52??x.ltp,x.ltp),lo52:Math.min(o.lo52??x.ltp,x.ltp),live:true,vm:x.valueMn||0,vol:x.volume||0};});
+ return mk.concat(old.filter(m=>!seen[m.symbol]));}
+function freshLive(cap,d){const iso=parseAsOf(d.asOf)||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Dhaka'});
+ return {startCash:cap,cash:cap,realized:0,day:0,dayStartEq:cap,lots:[],txns:[],nw:[{day:0,eq:cap}],mode:'live',liveDate:iso,dates:{0:lab(iso)},liveAsOf:d.asOf,marketOpen:d.marketOpen,market:mergeLive([],d.stocks,false)};}
+function applyLive(p,d){const iso=parseAsOf(d.asOf)||p.liveDate,nd=iso>p.liveDate;
+ const eqOf=st=>st.cash+st.lots.reduce((a,l)=>a+l.qty*st.market.find(m=>m.symbol===l.symbol).ltp,0);
+ let n={...p,market:mergeLive(p.market,d.stocks,nd),liveAsOf:d.asOf,marketOpen:d.marketOpen,stale:!!d.stale,behind:!!d.behind,expected:d.expectedDate};
+ if(nd){const day=p.day+Math.max(1,tdBetween(p.liveDate,iso));n={...n,dayStartEq:eqOf(p),day,liveDate:iso,dates:{...p.dates,[day]:lab(iso)}};n.nw=[...(p.nw||[]),{day,eq:eqOf(n)}];}
+ return n;}
+const PAL=['#38bdf8','#34d399','#fbbf24','#f472b6','#a78bfa','#fb923c','#2dd4bf','#94a3b8'];
+const CAT={A:'Regular dividend (10%+) and AGM held. Settles T+2.',B:'Dividend below 10%. Settles T+2.',N:'Newly listed. Settles T+2.',Z:'Missed dividend/AGM or running at a loss. Higher risk, settles T+3.'};
+const fresh=(cap=500000)=>({startCash:cap,cash:cap,realized:0,day:0,dayStartEq:cap,lots:[],txns:[],nw:[{day:0,eq:cap}],market:tick(seedMarket())});
+function load(){try{const u=localStorage.getItem('dse-user')||'default';const j=JSON.parse(localStorage.getItem(KEY+':'+u)||(u==='default'?localStorage.getItem(KEY):null));if(j&&j.market)return {...j,market:j.market.map(m=>m.hist?m:{...m,...extra(m.ltp)})};}catch(e){}return fresh();}
+const Ic=({d,s=16})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
+const I={
+ search:<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>,x:<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
+ ff:<><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></>,
+ up:<><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>,
+ down:<><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></>,
+ reset:<><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></>,
+ sliders:<><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></>};
+
+function Stat({label,value,sub,c}){return <div className="panel rounded-lg px-4 py-3 min-w-0"><div className="text-xs text-slate-400">{label}</div>
+ <div className={`num text-lg sm:text-xl font-medium truncate ${c||''}`}>{value}</div>{sub&&<div className={`num text-xs ${c||'text-slate-500'}`}>{sub}</div>}</div>;}
+
+function OrderModal({stock,side0,s,onClose,onSubmit}){
+ const [side,setSide]=useState(side0);const [qty,setQty]=useState('');const [price,setPrice]=useState(String(stock.ltp));const [err,setErr]=useState('');const [note,setNote]=useState('');
+ const {up,lo}=limits(stock);
+ const mat=s.lots.filter(l=>l.symbol===stock.symbol&&s.day-l.day>=need(l.cat)).reduce((a,l)=>a+l.qty,0);
+ const held=s.lots.filter(l=>l.symbol===stock.symbol).reduce((a,l)=>a+l.qty,0);
+ const q=Math.floor(+qty)||0,p=+price||0,gross=q*p,fee=gross*FEE,total=side==='BUY'?gross+fee:gross-fee;
+ return <div className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center scrim p-3" onClick={onClose}>
+ <div className="panel rounded-xl w-full max-w-md p-5" onClick={e=>e.stopPropagation()}>
+  <div className="flex justify-between items-start mb-4"><div><div className="text-lg font-semibold">{stock.symbol} <span className="text-xs text-slate-400 font-normal">Cat {stock.cat}</span></div>
+   <div className="text-xs text-slate-400">{stock.name}</div></div><button onClick={onClose} className="text-slate-400 hover:text-white"><Ic d={I.x} s={20}/></button></div>
+  <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-slate-900 mb-4">
+   {['BUY','SELL'].map(t=><button key={t} onClick={()=>{setSide(t);setErr('')}} className={`py-2 rounded-md text-sm font-medium ${side===t?(t==='BUY'?'bg-emerald-600 text-white':'bg-rose-600 text-white'):'text-slate-400'}`}>{t==='BUY'?'Buy':'Sell'}</button>)}</div>
+  <div className="grid grid-cols-3 gap-2 text-xs mb-4 num">
+   <div><div className="text-slate-500 font-sans">LTP</div>{fmt(stock.ltp)}</div><div><div className="text-slate-500 font-sans">Circuit low</div>{fmt(lo)}</div><div><div className="text-slate-500 font-sans">Circuit high</div>{fmt(up)}</div></div>
+  <label className="block text-xs text-slate-400 mb-1">Quantity</label>
+  <input value={qty} onChange={e=>setQty(e.target.value)} type="number" min="1" inputMode="numeric" className="num w-full mb-3 bg-slate-900 border border-slate-700 rounded-md px-3 py-2 outline-none focus:border-emerald-500" placeholder="0"/>
+  <label className="block text-xs text-slate-400 mb-1">Price per share (Tk)</label>
+  <input value={price} onChange={e=>setPrice(e.target.value)} type="number" step="0.1" inputMode="decimal" className="num w-full mb-4 bg-slate-900 border border-slate-700 rounded-md px-3 py-2 outline-none focus:border-emerald-500"/>
+  <label className="block text-xs text-slate-400 mb-1">Trade journal (why are you making this trade?)</label>
+  <textarea value={note} onChange={e=>setNote(e.target.value)} rows="2" maxLength="300" className="w-full mb-4 bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:border-emerald-500" placeholder="e.g. Strong Q3 earnings, buying the dip in a blue chip"/>
+  <div className="text-sm space-y-1 mb-4 num">
+   <div className="flex justify-between"><span className="text-slate-400 font-sans">Value</span><span>{tk(gross)}</span></div>
+   <div className="flex justify-between"><span className="text-slate-400 font-sans">Commission (0.35%)</span><span>{tk(fee)}</span></div>
+   <div className="flex justify-between font-medium border-t border-slate-700 pt-1"><span className="font-sans">{side==='BUY'?'Total cost':'Net proceeds'}</span><span>{tk(total)}</span></div>
+   <div className="flex justify-between text-xs text-slate-500"><span className="font-sans">{side==='BUY'?'Cash available':'Sellable (matured) / held'}</span><span>{side==='BUY'?tk(s.cash):`${mat} / ${held}`}</span></div></div>
+  {err&&<div className="mb-3 text-sm text-rose-300 bg-rose-950/60 border border-rose-900 rounded-md px-3 py-2">{err}</div>}
+  <button onClick={()=>{const e=onSubmit(side,stock.symbol,qty,price,note);e?setErr(e):onClose()}} className={`w-full py-2.5 rounded-md font-medium text-white ${side==='BUY'?'bg-emerald-600 hover:bg-emerald-500':'bg-rose-600 hover:bg-rose-500'}`}>
+   {side==='BUY'?'Place buy order':'Place sell order'}</button></div></div>;}
+
+function Spark({data}){const W=600,H=150,P=8,n=data.length;
+ if(n<2)return <div className="rmuted">Not enough trading days for a chart yet.</div>;
+ const vs=data.map(d=>d.v);let mn=Math.min(...vs),mx=Math.max(...vs);if(mx===mn){mx+=1;mn-=1;}
+ const X=i=>P+i*(W-2*P)/(n-1),Y=v=>H-P-(v-mn)/(mx-mn)*(H-2*P),pts=data.map((d,i)=>`${X(i)},${Y(d.v)}`).join(' ');
+ return <div><svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}}><polygon points={`${pts} ${X(n-1)},${H-P} ${X(0)},${H-P}`} fill="#0369a1" opacity=".12"/><polyline points={pts} fill="none" stroke="#0369a1" strokeWidth="2"/></svg>
+  <div className="rmuted">{data[0].l}: Tk {fmt(vs[0])} to {data[n-1].l}: Tk {fmt(vs[n-1])}. Low {fmt(Math.min(...vs))}, high {fmt(Math.max(...vs))}.</div></div>;}
+function Area({data}){
+ const [h,setH]=useState(null);const W=600,H=190,P=10,n=data.length;
+ if(n<2)return <div className="text-sm text-slate-500 py-12 text-center">Advance a trading day to start the chart.</div>;
+ const vs=data.map(d=>d.v);let mn=Math.min(...vs),mx=Math.max(...vs);if(mx===mn){mx+=1;mn-=1;}const pd=(mx-mn)*.12;mn-=pd;mx+=pd;
+ const X=i=>P+i*(W-2*P)/(n-1),Y=v=>H-P-(v-mn)/(mx-mn)*(H-2*P);const pts=data.map((d,i)=>`${X(i)},${Y(d.v)}`).join(' ');
+ const c=vs[n-1]>=vs[0]?'#34d399':'#fb7185';const k=h==null?n-1:Math.min(h,n-1);
+ return <div><div className="flex justify-between text-xs mb-1 num"><span className="text-slate-400">{data[k].l}</span><span>{tk(data[k].v)}</span></div>
+ <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto cursor-crosshair" style={{touchAction:'pan-y'}} onPointerMove={e=>{const r=e.currentTarget.getBoundingClientRect();setH(Math.max(0,Math.round(((e.clientX-r.left)/r.width*W-P)/(W-2*P)*(n-1))));}} onPointerLeave={()=>setH(null)}>
+  {[0,.5,1].map(f=><line key={f} x1={P} x2={W-P} y1={P+f*(H-2*P)} y2={P+f*(H-2*P)} stroke="#1e2a44"/>)}
+  <polygon points={`${pts} ${X(n-1)},${H-P} ${X(0)},${H-P}`} fill={c} opacity=".14"/><polyline points={pts} fill="none" stroke={c} strokeWidth="2" strokeLinejoin="round"/>
+  <line x1={X(k)} x2={X(k)} y1={P} y2={H-P} stroke="#64748b" strokeDasharray="3 3"/><circle cx={X(k)} cy={Y(data[k].v)} r="4" fill={c}/></svg>
+ <div className="flex justify-between text-[11px] text-slate-500 num"><span>Low {fmt(Math.min(...vs))}</span><span>High {fmt(Math.max(...vs))}</span></div></div>;}
+function Donut({parts}){const t=parts.reduce((a,p)=>a+p.v,0),R=60,C=2*Math.PI*R;let off=0;
+ return <svg viewBox="0 0 160 160" className="w-36 h-36"><g transform="rotate(-90 80 80)">{parts.map(p=>{const len=p.v/t*C;const el=<circle key={p.name} cx="80" cy="80" r={R} fill="none" stroke={p.color} strokeWidth="22" strokeDasharray={`${len} ${C-len}`} strokeDashoffset={-off}/>;off+=len;return el;})}</g>
+ <text x="80" y="78" textAnchor="middle" fill="#94a3b8" fontSize="10">Holdings</text><text x="80" y="94" textAnchor="middle" fill="#e2e8f0" fontSize="12" className="num">{fmt(t/1000,0)}k</text></svg>;}
+function Drawer({stock:m,onClose,onTrade,held}){
+ const [rh,setRh]=useState(null);
+ useEffect(()=>{if(!m.live)return;let on=true;fetch('/api/dse-history/'+encodeURIComponent(m.symbol)).then(r=>r.ok?r.json():null).then(j=>{if(on&&j&&j.closes&&j.closes.length>1)setRh(j)}).catch(()=>{});return()=>{on=false};},[m.symbol]);
+ const hist=rh?rh.closes:m.hist,hi=rh?rh.hi52:m.hi52,lo=rh?rh.lo52:m.lo52,n=hist.length,pos=(m.ltp-lo)/((hi-lo)||1)*100;
+ const data=hist.map((v,i)=>({l:i===n-1?'Today':`${n-1-i} day${n-1-i>1?'s':''} ago`,v}));
+ return <div className="fixed inset-0 z-40 flex justify-end scrim" onClick={onClose}><aside className="w-full sm:max-w-md h-full overflow-y-auto bg-slate-950 border-l border-slate-800 p-5" onClick={e=>e.stopPropagation()}>
+  <div className="flex justify-between items-start mb-4"><div><div className="text-xl font-semibold">{m.symbol}</div><div className="text-sm text-slate-400">{m.name} &middot; {m.sector}</div></div><button onClick={onClose} className="text-slate-400 hover:text-white"><Ic d={I.x} s={20}/></button></div>
+  <div className="flex items-baseline gap-3 mb-4 num"><span className="text-3xl">{fmt(m.ltp)}</span><span className={cls(m.chg)}>{sg(m.chg)}%</span></div>
+  <div className="panel rounded-lg p-3 mb-3"><div className="text-xs text-slate-400 mb-1">Price history</div><Area data={data}/></div>
+  <div className="panel rounded-lg p-3 mb-3 text-sm num"><div className="flex justify-between text-xs mb-1"><span>{m.live&&!rh?'Tracked low':'52W low'} {fmt(lo)}</span><span>{m.live&&!rh?'Tracked high':'52W high'} {fmt(hi)}</span></div>
+   <div className="h-1.5 bg-slate-800 rounded relative"><div className="absolute top-[-3px] w-2.5 h-3 rounded-sm bg-sky-400" style={{left:`calc(${Math.max(0,Math.min(100,pos))}% - 5px)`}}/></div>
+   <div className="flex justify-between mt-3"><span className="text-slate-400 font-sans">P/E ratio</span><span>{m.pe==null?'n/a':fmt(m.pe,1)}</span></div>
+   <div className="flex justify-between"><span className="text-slate-400 font-sans">Day range</span><span>{fmt(m.low)} – {fmt(m.high)}</span></div>
+   <div className="flex justify-between"><span className="text-slate-400 font-sans">Circuit limits</span><span>{fmt(limits(m).lo)} – {fmt(limits(m).up)}</span></div>
+   {held&&<div className="flex justify-between"><span className="text-slate-400 font-sans">You hold</span><span>{held.qty} ({held.mat} sellable)</span></div>}</div>
+  <div className="panel rounded-lg p-3 mb-4 text-sm"><div className="font-medium mb-1">Category {m.cat}</div><div className="text-slate-400">{CAT[m.cat]}</div></div>
+  <div className="grid grid-cols-2 gap-2"><button onClick={()=>onTrade('BUY')} className="bg-emerald-600 hover:bg-emerald-500 rounded-md py-2.5 font-medium">Buy</button><button onClick={()=>onTrade('SELL')} className="bg-rose-600 hover:bg-rose-500 rounded-md py-2.5 font-medium">Sell</button></div>
+  <p className="text-[11px] text-slate-600 mt-3">{m.live?(rh?'Price history from DSE via bdshare. ':'History builds from each day you use the app. ')+'P/E is not in the price feed.':'History, 52-week range and P/E are simulated.'}</p></aside></div>;}
+const Seg=({opts,val,on})=><div className="flex p-1 rounded-full" style={{background:'var(--gl)'}}>{opts.map(([k,l])=><button key={k} onClick={()=>on(k)} className={`flex-1 py-1 rounded-full text-xs ${val===k?'bg-sky-600 text-white':''}`}>{l}</button>)}</div>;
+function Sectors({market,onPick}){
+ const g={};market.forEach(m=>{const k=m.sector||'Other';(g[k]=g[k]||[]).push(m);});
+ const qt=(a,p)=>{const i=(a.length-1)*p,l=Math.floor(i);return a[l]+(a[Math.min(l+1,a.length-1)]-a[l])*(i-l);};
+ const secs=Object.entries(g).map(([name,a])=>{const c=a.map(x=>x.chg).sort((x,y)=>x-y);return {name,a,w:a.reduce((t,x)=>t+(x.vm||1),0),avg:c.reduce((t,x)=>t+x,0)/c.length,mn:c[0],q1:qt(c,.25),md:qt(c,.5),q3:qt(c,.75),mx:c[c.length-1]};}).sort((a,b)=>b.w-a.w);
+ const tot=secs.reduce((t,x)=>t+x.w,0)||1;
+ const col=c=>{const t=Math.max(-1,Math.min(1,c/5));return t>=0?`rgba(52,211,153,${.18+t*.7})`:`rgba(251,113,133,${.18-t*.7})`;};
+ const adv=market.filter(m=>m.chg>0).length,dec=market.filter(m=>m.chg<0).length;
+ const top=(k,asc)=>[...market].sort((a,b)=>asc?a[k]-b[k]:b[k]-a[k]).slice(0,6);
+ const W=600,L=150,X=v=>L+(Math.max(-10,Math.min(10,v))+10)/20*(W-L-10),H=secs.length*24+28;
+ const lists=[['Top gainers','chg',false,m=>sg(m.chg)+'%'],['Top losers','chg',true,m=>sg(m.chg)+'%'],['Top by turnover','vm',false,m=>fmt(m.vm||0)+' mn'],['Top by volume','vol',false,m=>fmt(m.vol||0,0)]];
+ return <div className="space-y-3">
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3"><Stat label="Advancers" value={adv} c="text-emerald-400"/><Stat label="Decliners" value={dec} c="text-rose-400"/><Stat label="Unchanged" value={market.length-adv-dec}/><Stat label="Turnover (mn)" value={fmt(market.reduce((t,x)=>t+(x.vm||0),0))}/></div>
+  <div className="panel rounded-lg p-4"><div className="text-sm font-medium mb-2">Market heatmap <span className="text-xs text-slate-400 font-normal">(box size = turnover, colour = % change)</span></div>
+   <div style={{display:'flex',flexWrap:'wrap',gap:6}}>{secs.map(sc=><div key={sc.name} style={{flex:`${Math.max(sc.w/tot*100,5)} 1 150px`}}><div className="text-[11px] text-slate-400 mb-1 truncate">{sc.name} <span className="num" style={{color:sc.avg>=0?'#34d399':'#fb7185'}}>{sg(sc.avg)}%</span></div>
+    <div style={{display:'flex',flexWrap:'wrap',gap:3}}>{[...sc.a].sort((a,b)=>(b.vm||1)-(a.vm||1)).slice(0,30).map(m=><button key={m.symbol} onClick={()=>onPick(m.symbol)} title={`${m.name} ${sg(m.chg)}%`} style={{flex:`${Math.max(m.vm||1,1)} 1 52px`,minHeight:40,background:col(m.chg),borderRadius:10,fontSize:10,lineHeight:1.2,padding:'3px 4px'}}><b>{m.symbol.slice(0,9)}</b><div className="num">{sg(m.chg)}%</div></button>)}</div></div>)}</div></div>
+  <div className="grid lg:grid-cols-2 gap-3">
+   <div className="panel rounded-lg p-4"><div className="text-sm font-medium mb-2">Sector performance (average % change)</div>{secs.map(sc=><div key={sc.name} className="flex items-center gap-2 text-xs mb-1"><span className="w-32 truncate text-slate-400">{sc.name}</span>
+    <div className="flex-1 h-3 relative rounded-full" style={{background:'var(--gl)'}}><div style={{position:'absolute',top:0,bottom:0,left:sc.avg>=0?'50%':`${50-Math.min(50,Math.abs(sc.avg)*10)}%`,width:`${Math.min(50,Math.abs(sc.avg)*10)}%`,background:sc.avg>=0?'#34d399':'#fb7185',borderRadius:99}}/></div><span className={`num w-14 text-right ${cls(sc.avg)}`}>{sg(sc.avg)}%</span></div>)}</div>
+   <div className="panel rounded-lg p-4"><div className="text-sm font-medium mb-2">Spread of % change by sector <span className="text-xs text-slate-400 font-normal">(box and whisker)</span></div>
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:'auto'}}>{[-10,-5,0,5,10].map(v=><g key={v}><line x1={X(v)} x2={X(v)} y1="0" y2={H-18} stroke="var(--glb)" strokeWidth={v===0?1.5:.6}/><text x={X(v)} y={H-4} fontSize="10" textAnchor="middle" fill="var(--mut)">{v}%</text></g>)}
+     {secs.map((sc,i)=>{const y=i*24+12;return <g key={sc.name}><text x="0" y={y+4} fontSize="11" fill="var(--mut)">{sc.name.slice(0,22)}</text><line x1={X(sc.mn)} x2={X(sc.mx)} y1={y} y2={y} stroke="var(--mut)"/>
+      <rect x={X(sc.q1)} y={y-7} width={Math.max(2,X(sc.q3)-X(sc.q1))} height="14" rx="4" fill="var(--ac)" opacity=".55"/><line x1={X(sc.md)} x2={X(sc.md)} y1={y-7} y2={y+7} stroke="var(--tx)" strokeWidth="2"/></g>;})}</svg></div></div>
+  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">{lists.map(([t,k,asc,f])=><div key={t} className="panel rounded-lg p-4"><div className="text-sm font-medium mb-2">{t}</div>{top(k,asc).map(m=><button key={m.symbol} onClick={()=>onPick(m.symbol)} className="flex justify-between w-full text-sm py-0.5"><span>{m.symbol}</span><span className="num text-slate-400">{f(m)}</span></button>)}</div>)}</div></div>;}
+function Companies({market,onPick,srv}){
+ const [v,setV]=useState('list'),[q,setQ]=useState(''),[sec,setSec]=useState('All'),[sel,setSel]=useState(null),[info,setInfo]=useState(null),[st,setSt]=useState(null);
+ useEffect(()=>{if(!srv)return;fetch('/api/companies/status').then(r=>r.json()).then(setSt).catch(()=>{});},[srv]);
+ useEffect(()=>{setInfo(null);if(!sel||!srv)return;fetch('/api/company/'+sel).then(r=>r.ok?r.json():null).then(j=>setInfo(j&&j.info)).catch(()=>{});},[sel]);
+ const secs=[...new Set(market.map(m=>m.sector||'Other'))].sort();
+ const list=market.filter(m=>(sec==='All'||m.sector===sec)&&(m.symbol+m.name).toLowerCase().includes(q.toLowerCase())).slice(0,300);
+ const m0=sel&&market.find(m=>m.symbol===sel);
+ return <div className="space-y-3"><div className="flex flex-wrap gap-2 items-center"><Seg opts={[['list','Companies'],['sectors','Sectors']]} val={v} on={setV}/>
+  {st&&st.running&&<span className="text-xs text-slate-400">Loading company details {st.done}/{st.total}…</span>}{!srv&&<span className="text-xs text-slate-400">Run server.py for full company pages.</span>}</div>
+  {v==='list'?<div className="grid lg:grid-cols-5 gap-3"><div className="lg:col-span-3 panel rounded-lg p-3"><div className="flex gap-2 mb-2"><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search" className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm outline-none"/>
+    <select value={sec} onChange={e=>setSec(e.target.value)} className="max-w-[45%]"><option>All</option>{secs.map(x=><option key={x}>{x}</option>)}</select></div>
+    <div style={{maxHeight:520,overflowY:'auto'}}><table className="w-full"><thead><tr><th>Symbol</th><th>Sector</th><th>Cat</th><th>LTP</th><th>P/E</th></tr></thead><tbody>{list.map(m=><tr key={m.symbol} onClick={()=>setSel(m.symbol)} className="cursor-pointer"><td><b>{m.symbol}</b><div className="text-xs text-slate-500 truncate max-w-[220px]">{m.name}</div></td><td className="text-slate-400">{m.sector||'Other'}</td><td>{m.cat}</td><td className="num">{fmt(m.ltp)}</td><td className="num">{m.pe==null?'n/a':fmt(m.pe,1)}</td></tr>)}</tbody></table></div></div>
+   <div className="lg:col-span-2 panel rounded-lg p-4 text-sm">{!m0?<div className="text-slate-400">Select a company to see its details.</div>:<><div className="flex justify-between items-start"><div><div className="text-lg font-semibold">{m0.symbol}</div><div className="text-slate-400">{m0.name}</div></div><button onClick={()=>onPick(m0.symbol)} className="bg-sky-600 text-white rounded-md px-3 py-1 text-xs">Chart / trade</button></div>
+    <div className="num mt-2">{fmt(m0.ltp)} <span className={cls(m0.chg)}>{sg(m0.chg)}%</span></div><div className="text-xs text-slate-400 mb-2">{m0.sector||'Other'} &middot; Category {m0.cat}</div>
+    {info?<div style={{maxHeight:380,overflowY:'auto'}}><table className="w-full"><tbody>{Object.entries(info).map(([k,x])=><tr key={k}><td className="text-slate-400 !whitespace-normal align-top">{k}</td><td className="!whitespace-normal !text-right">{x}</td></tr>)}</tbody></table></div>:<div className="text-xs text-slate-400">{srv?'Full company details are still being fetched.':'Full details need the local server.'}</div>}</>}</div></div>
+  :<div className="panel rounded-lg overflow-x-auto"><table className="w-full"><thead><tr><th>Sector</th><th>Companies</th><th>Avg change</th><th>Adv / Dec</th><th>Turnover (mn)</th><th>Best mover</th></tr></thead><tbody>{secs.map(x=>{const a=market.filter(m=>(m.sector||'Other')===x),b=[...a].sort((p,q2)=>q2.chg-p.chg)[0];return <tr key={x}><td>{x}</td><td>{a.length}</td><td className={`num ${cls(a.reduce((t,m)=>t+m.chg,0))}`}>{sg(a.reduce((t,m)=>t+m.chg,0)/a.length)}%</td><td className="num">{a.filter(m=>m.chg>0).length} / {a.filter(m=>m.chg<0).length}</td><td className="num">{fmt(a.reduce((t,m)=>t+(m.vm||0),0))}</td><td>{b.symbol} <span className={cls(b.chg)}>{sg(b.chg)}%</span></td></tr>;})}</tbody></table></div>}</div>;}
+function History({px,srv}){
+ const [dates,setDates]=useState(null),[date,setDate]=useState(''),[times,setTimes]=useState([]),[i,setI]=useState(0),[rows,setRows]=useState([]),[q,setQ]=useState('');
+ useEffect(()=>{if(!srv)return;fetch('/api/history/dates').then(r=>r.json()).then(j=>{setDates(j);if(j.length)setDate(j[0].date);}).catch(()=>setDates([]));},[srv]);
+ useEffect(()=>{if(!date)return;fetch('/api/history/times?date='+date).then(r=>r.json()).then(j=>{setTimes(j);setI(Math.max(0,j.length-1));});},[date]);
+ useEffect(()=>{const t=times[i];if(!t)return;let on=1;fetch(t.ts?'/api/history/snapshot?ts='+t.ts:'/api/history/snapshot?date='+date).then(r=>r.json()).then(j=>on&&setRows(j));return()=>{on=0};},[i,times]);
+ if(!srv)return <div className="panel rounded-lg p-6 text-sm text-slate-400">Price history is stored by the local server (python server.py). It records the whole market every 5 minutes while DSE is open.</div>;
+ const list=rows.filter(r=>r.symbol.includes(q.toUpperCase())).map(r=>({...r,chg:r.ycp?(r.ltp-r.ycp)/r.ycp*100:0,now:px[r.symbol]&&px[r.symbol].ltp}));
+ return <div className="space-y-3"><div className="panel rounded-lg p-4"><div className="flex flex-wrap gap-2 items-center mb-3"><select value={date} onChange={e=>setDate(e.target.value)}>{(dates||[]).map(d=><option key={d.date} value={d.date}>{d.date} ({d.ticks||'close only'})</option>)}</select>
+   <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Filter symbol" className="bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 text-sm outline-none"/></div>
+  {times.length>0?<div className="flex items-center gap-3"><button onClick={()=>setI(Math.max(0,i-1))} className="panel rounded-full w-9 h-9">◀</button><input type="range" min="0" max={Math.max(0,times.length-1)} value={i} onChange={e=>setI(+e.target.value)} className="flex-1" style={{accentColor:'var(--ac)'}}/><button onClick={()=>setI(Math.min(times.length-1,i+1))} className="panel rounded-full w-9 h-9">▶</button><span className="num w-14 text-right">{times[i]&&times[i].label}</span></div>
+   :<div className="text-sm text-slate-400">{dates&&!dates.length?'No history yet. Leave the server running during market hours (10:00 to 14:30) and it will fill in.':'Loading…'}</div>}</div>
+  <div className="panel rounded-lg overflow-x-auto" style={{maxHeight:520,overflowY:'auto'}}><table className="w-full"><thead><tr><th>Symbol</th><th>Price then</th><th>YCP</th><th>Change then</th><th>High</th><th>Low</th><th>Volume</th><th>Price now</th></tr></thead><tbody>
+   {list.slice(0,400).map(r=><tr key={r.symbol}><td><b>{r.symbol}</b></td><td className="num">{fmt(r.ltp)}</td><td className="num">{fmt(r.ycp)}</td><td className={`num ${cls(r.chg)}`}>{sg(r.chg)}%</td><td className="num">{fmt(r.high)}</td><td className="num">{fmt(r.low)}</td><td className="num">{fmt(r.volume,0)}</td><td className="num">{r.now?fmt(r.now):'-'}</td></tr>)}</tbody></table></div></div>;}
+function App(){
+ const [s,setS]=useState(load);DATES=s.dates||{};CFG=s.prefs||{};const [tab,setTab]=useState('overview');const [q,setQ]=useState('');const [cat,setCat]=useState('All');
+ const [srv,setSrv]=useState(false),[users,setUsers]=useState([]),[menu,setMenu]=useState(false),[dep,setDep]=useState(''),[nu,setNu]=useState(''),[pw,setPw]=useState(''),[sort,setSort]=useState({k:'symbol',d:1});
+ const [user,setUser]=useState(()=>{try{return localStorage.getItem('dse-user')||'default'}catch(e){return 'default'}});const ready=useRef(false);
+ const [api,setApi]=useState(null);const [liveErr,setLiveErr]=useState(false);const [useLive,setUseLive]=useState(false);const rpt=useRef(null);
+ const isLive=s.mode==='live';
+ async function poll(fresh){try{const r=await fetch('/api/dse-live'+(fresh===true?'?fresh=1':''));if(!r.ok)throw 0;const d=await r.json();if(!d.stocks||!d.stocks.length)throw 0;LIVE_OK=true;setApi(d);setLiveErr(false);setS(p=>p.mode==='live'?applyLive(p,d):p);if(fresh===true)say('Prices updated: '+(d.asOf||'latest')+(d.behind?' (DSE has not published newer prices yet)':''));}catch(e){setLiveErr(true);if(fresh===true)say("Couldn't reach the price server");}}
+ useEffect(()=>{poll();},[]);
+ const [drawer,setDrawer]=useState(null);const [dl,setDl]=useState(null);const [csvView,setCsvView]=useState('');
+ const [order,setOrder]=useState(null);const [toast,setToast]=useState('');const [cfg,setCfg]=useState(false);const [cap,setCap]=useState('500000');
+ useEffect(()=>{try{window.claude.use('downloads').then(d=>setDl(d||null)).catch(()=>{})}catch(e){}},[]);
+ useEffect(()=>{try{localStorage.setItem(KEY+':'+user,JSON.stringify(s))}catch(e){}
+  if(!ready.current)return;const t=setTimeout(()=>{fetch('/api/state/'+encodeURIComponent(user),{method:'PUT',headers:{'Content-Type':'application/json',...authH()},body:JSON.stringify(s)}).catch(()=>{})},800);return()=>clearTimeout(t);},[s]);
+ const px=useMemo(()=>Object.fromEntries(s.market.map(m=>[m.symbol,m])),[s.market]);
+ const eq=st=>st.cash+st.lots.reduce((a,l)=>a+l.qty*(st.market.find(m=>m.symbol===l.symbol).ltp),0);
+ const equity=eq(s),mv=equity-s.cash,cost=s.lots.reduce((a,l)=>a+l.cost,0),unreal=mv-cost,daily=equity-s.dayStartEq,total=equity-s.startCash;
+ const say=m=>{setToast(m);setTimeout(()=>setToast(''),3200)};
+ function advance(){setS(p=>{const n={...p,dayStartEq:eq(p),day:p.day+1,market:tick(p.market)};return {...n,nw:[...(p.nw||[]),{day:n.day,eq:eq(n)}]};});say('Moved to next trading day');}
+ function trade(side,sym,qty,price,note){
+  const m=px[sym];qty=Math.floor(+qty);price=+price;
+  if(!(qty>0)||!(price>0))return 'Enter a valid quantity and price.';
+  const {up,lo}=limits(m);
+  if(price>up||price<lo)return `Circuit breaker: price must be between Tk ${fmt(lo)} and Tk ${fmt(up)}.`;
+  const gross=r2(qty*price),fee=r2(gross*FEE);let st={...s},pnl=null;
+  if(side==='BUY'){const t=r2(gross+fee);if(t>s.cash)return `Insufficient cash: need ${tk(t)}, you have ${tk(s.cash)}.`;
+   st.cash=r2(s.cash-t);st.lots=[...s.lots,{id:Date.now(),symbol:sym,cat:m.cat,qty,price,cost:t,day:s.day,date:dateOf(s.day)}];}
+  else{const ms=s.lots.filter(l=>l.symbol===sym&&s.day-l.day>=need(l.cat));const avail=ms.reduce((a,l)=>a+l.qty,0);
+   if(qty>avail){const held=s.lots.filter(l=>l.symbol===sym).reduce((a,l)=>a+l.qty,0);
+    return avail===0?`Not sellable yet: ${held||'no'} shares held, none matured (T+${need(m.cat)} for category ${m.cat}).`:`Only ${avail} matured shares can be sold (${held-avail} still within T+${need(m.cat)}).`;}
+   let left=qty,basis=0;const lots=[];
+   [...s.lots].sort((a,b)=>a.day-b.day).forEach(l=>{if(l.symbol===sym&&left>0&&s.day-l.day>=need(l.cat)){const t=Math.min(left,l.qty);basis+=l.cost*t/l.qty;left-=t;
+     if(t<l.qty)lots.push({...l,qty:l.qty-t,cost:l.cost*(l.qty-t)/l.qty});}else lots.push(l);});
+   const net=r2(gross-fee);pnl=r2(net-basis);st.cash=r2(s.cash+net);st.realized=r2(s.realized+pnl);st.lots=lots;}
+  const t=side==='BUY'?r2(gross+fee):r2(gross-fee);
+  st.txns=[{id:'T'+String(s.txns.length+1).padStart(4,'0'),ts:new Date().toISOString(),simDate:dateOf(s.day),type:side,symbol:sym,qty,price,fee,total:t,pnl,note:(note||'').trim()},...s.txns];
+  setS(st);say(`${side==='BUY'?'Bought':'Sold'} ${qty} ${sym} @ ${fmt(price)}`);return null;}
+ const holds=useMemo(()=>{const g={};s.lots.forEach(l=>{const h=g[l.symbol]||(g[l.symbol]={symbol:l.symbol,cat:l.cat,qty:0,mat:0,cost:0,gross:0,date:l.date,next:null});
+  h.qty+=l.qty;h.cost+=l.cost;h.gross+=l.qty*l.price;if(s.day-l.day>=need(l.cat))h.mat+=l.qty;else{const left=need(l.cat)-(s.day-l.day);h.next=h.next==null?left:Math.min(h.next,left);}});
+  return Object.values(g);},[s]);
+ const sectors=useMemo(()=>{const g={};s.lots.forEach(l=>{const m=px[l.symbol];g[m.sector]=(g[m.sector]||0)+l.qty*m.ltp});const t=Object.values(g).reduce((a,b)=>a+b,0);
+  return Object.entries(g).map(([name,v])=>({name,v,pct:v/t*100})).sort((a,b)=>b.v-a.v).map((x,i)=>({...x,color:PAL[i%PAL.length]}));},[s]);
+ const over=sectors.filter(x=>x.pct>35);
+ const nwData=(s.nw||[]).filter(x=>x.day<s.day).concat({day:s.day,eq:equity}).map(x=>({l:dateOf(x.day),v:x.eq}));
+ const contrib={};s.lots.forEach(l=>{const m=px[l.symbol];contrib[l.symbol]=(contrib[l.symbol]||0)+l.qty*(m.ltp-(l.day===s.day?l.price:m.close));});
+ const ranked=Object.entries(contrib).map(([sym,p])=>{const v=holds.find(x=>x.symbol===sym).qty*px[sym].ltp;return {sym,p,pct:p/((v-p)||1)*100};}).sort((a,b)=>b.p-a.p);
+ const best=ranked[0],worst=ranked[ranked.length-1];
+ const fees=s.txns.reduce((a,t)=>a+t.fee,0);
+ function buildCsv(){const e=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const head=['Txn ID','Trading date','Timestamp','Type','Symbol','Category','Quantity','Price (BDT)','Gross value (BDT)','Commission 0.35% (BDT)','Net amount (BDT)','Realized P/L (BDT)','Journal note'];
+  const body=[...s.txns].reverse().map(t=>[t.id,t.simDate,t.ts,t.type,t.symbol,px[t.symbol].cat,t.qty,fmt(t.price,2),fmt(t.qty*t.price,2),fmt(t.fee,2),fmt(t.total,2),t.pnl==null?'':fmt(t.pnl,2),t.note||''].map(e).join(','));
+  const sum=[['Starting capital (BDT)',s.startCash],['Closing cash (BDT)',s.cash],['Holdings value (BDT)',mv],['Total equity (BDT)',equity],['Total return (BDT)',total],['Total return (%)',total/s.startCash*100],['Realized P/L (BDT)',s.realized],['Unrealized P/L (BDT)',unreal],['Total commission paid (BDT)',fees],['Report date',dateOf(s.day)]].map(([a,b])=>e(a)+','+e(typeof b==='number'?fmt(b,2):b));
+  return '\ufeff'+[head.map(e).join(','),...body,'','SUMMARY',...sum].join('\r\n');}
+ async function exportCsv(){const csv=buildCsv();if(!dl){setCsvView(csv);return;}try{await dl.save({filename:`dse-transactions-day${s.day+1}.csv`,data:new Blob([csv],{type:'text/csv'})});}catch(e){if(e&&e.code!=='declined')setCsvView(csv);}}
+ const series=nwData.map(x=>x.v);
+ const dayRets=series.slice(1).map((v,i)=>({l:nwData[i+1].l,p:v-series[i],r:(v/series[i]-1)*100}));
+ let peak=series[0]||0,mdd=0;series.forEach(v=>{peak=Math.max(peak,v);mdd=Math.min(mdd,(v/peak-1)*100);});
+ const bestD=dayRets.length?dayRets.reduce((a,b)=>b.p>a.p?b:a):null,worstD=dayRets.length?dayRets.reduce((a,b)=>b.p<a.p?b:a):null;
+ const sells=s.txns.filter(t=>t.type==='SELL'),wins=sells.filter(t=>t.pnl>0).length,prof=s.profile||{},rc=n=>n>0.0001?'g':n<-0.0001?'l':'';
+ const setP=(k,v)=>setS(p=>({...p,profile:{...(p.profile||{}),[k]:v}}));
+ async function exportReport(){const css=document.getElementById('rptcss').textContent;
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>DSE Portfolio Report</title><style>body{margin:0;background:#e5e7eb;padding:16px}${css}</style></head><body>${rpt.current.outerHTML}</body></html>`;
+  if(!dl){setCsvView(html);return;}try{await dl.save({filename:`dse-final-report-${(prof.id||'student').replace(/\W+/g,'')}.html`,data:new Blob([html],{type:'text/html'})});}catch(e){if(e&&e.code!=='declined')setCsvView(html);}}
+ const P=s.prefs||{};const setPref=(k,v)=>setS(p=>({...p,prefs:{...(p.prefs||{}),[k]:v}}));
+ const toggleWatch=sym=>setS(p=>({...p,watch:(p.watch||[]).includes(sym)?p.watch.filter(x=>x!==sym):[...(p.watch||[]),sym]}));
+ const addMoney=()=>{const a=+dep;if(!(a>0))return;setS(p=>({...p,cash:r2(p.cash+a),startCash:r2(p.startCash+a),dayStartEq:p.dayStartEq+a,deposits:[...(p.deposits||[]),{amount:a,date:dateOf(p.day)}]}));setDep('');say('Added '+tk(a));};
+ function switchUser(u){ready.current=false;try{localStorage.setItem('dse-user',u)}catch(e){}setS(fresh(500000));setUser(u);setMenu(false);}
+ function signOut(){try{localStorage.removeItem('dse-token')}catch(e){}switchUser('default');}
+ async function auth(kind){const n=nu.trim();if(!n||!pw){say('Enter a username and password');return;}
+  try{const r=await fetch('/api/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,password:pw})});const j=await r.json().catch(()=>({}));
+   if(!r.ok){say(j.detail||'Failed');return;}localStorage.setItem('dse-token',j.token);setNu('');setPw('');switchUser(j.name);}catch(e){say('Server not reachable');}}
+ useEffect(()=>{ready.current=false;(async()=>{try{const r=await fetch('/api/state/'+encodeURIComponent(user),{headers:authH()});setSrv(true);if(r.ok)setS(await r.json());else if(r.status===401){signOut();return;}else if(r.status!==404)throw 0;}catch(e){}ready.current=true;})();},[user]);
+ useEffect(()=>{const pf=s.prefs||{},dark=(pf.theme||'dark')==='auto'?matchMedia('(prefers-color-scheme: dark)').matches:(pf.theme||'dark')==='dark',el=document.documentElement;
+  el.dataset.theme=dark?'dark':'light';el.style.setProperty('--ac',pf.accent||'#0a84ff');el.classList.toggle('gd',/Chrome|Edg/.test(navigator.userAgent));},[s.prefs]);
+ useEffect(()=>{const h=e=>{if(e.key==='Escape'){setMenu(false);setOrder(null);setDrawer(null);setCfg(false);}else if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){const i=document.getElementById('q');if(i){e.preventDefault();i.focus();}}};addEventListener('keydown',h);return()=>removeEventListener('keydown',h);},[]);
+ const rows=s.market.filter(m=>(cat==='All'||(cat==='★'?(s.watch||[]).includes(m.symbol):m.cat===cat))&&(m.symbol+m.name).toLowerCase().includes(q.toLowerCase()));
+ const shown=[...rows].sort((a,b)=>{const x=a[sort.k]??'',y=b[sort.k]??'';return (typeof x==='string'?x.localeCompare(y):x-y)*sort.d;});
+ return <div className="max-w-6xl mx-auto px-3 sm:px-5 py-4">
+  <header className="panel lens rounded-xl px-4 py-3 sticky top-2 z-30 flex flex-wrap items-center justify-between gap-3 mb-4">
+   <div><h1 className="text-xl font-semibold">DSE Portfolio Simulator</h1><div className="text-xs text-slate-400">Day {s.day+1} &middot; {dateOf(s.day)} &middot; {isLive?`LIVE DSE data as of ${s.liveAsOf||'n/a'}${s.marketOpen?'':' (market closed)'}${s.stale?' (stale)':''}`:'simulated prices'}</div></div>
+   <div className="flex gap-2 items-center relative"><button onClick={()=>{setUseLive(!!api);setCfg(true)}} className="panel rounded-md px-3 py-2 text-sm text-slate-300 flex items-center gap-2 hover:border-slate-500"><Ic d={I.reset}/>Reset</button>
+    {isLive?<button onClick={()=>poll(true)} className="bg-sky-600 hover:bg-sky-500 rounded-md px-4 py-2 text-sm font-medium flex items-center gap-2"><Ic d={I.reset}/>Refresh prices</button>:<button onClick={advance} className="bg-sky-600 hover:bg-sky-500 rounded-md px-4 py-2 text-sm font-medium flex items-center gap-2"><Ic d={I.ff}/>Next trading day</button>}
+    <button onClick={()=>setMenu(m=>!m)} title="Settings" className="panel rounded-full w-10 h-10 flex items-center justify-center"><Ic d={I.sliders} s={18}/></button>
+</div></header>
+    {menu&&<><div className="fixed inset-0 z-40 scrim" onClick={()=>setMenu(false)}/><div className="panel lens menu fixed right-3 top-20 z-50 max-h-[80vh] overflow-y-auto w-[19rem] max-w-[90vw] rounded-xl p-4 text-sm space-y-4 text-left">
+     <div className="flex justify-between items-center"><b>Settings</b><button onClick={()=>setMenu(false)} className="text-slate-400"><Ic d={I.x}/></button></div>
+     <div><div className="text-xs text-slate-400 mb-1">Theme</div><Seg opts={[['dark','Dark'],['light','Light'],['auto','Auto']]} val={P.theme||'dark'} on={v=>setPref('theme',v)}/></div>
+     <div><div className="text-xs text-slate-400 mb-1">Accent</div><div className="flex gap-2">{['#0a84ff','#30d158','#ff9f0a','#ff375f','#bf5af2','#64d2ff'].map(c=><button key={c} onClick={()=>setPref('accent',c)} className="w-7 h-7 rounded-full" style={{background:c,outline:(P.accent||'#0a84ff')===c?'2px solid var(--tx)':'none',outlineOffset:2}}/>)}</div></div>
+     <div><div className="text-xs text-slate-400 mb-1">Number format</div><Seg opts={[['en-US','1,234,567'],['en-IN','12,34,567']]} val={P.nf||'en-US'} on={v=>setPref('nf',v)}/></div>
+     <div><div className="text-xs text-slate-400 mb-1">Currency symbol</div><Seg opts={[['Tk','Tk'],['৳','৳']]} val={P.cur||'Tk'} on={v=>setPref('cur',v)}/></div>
+     <div><div className="text-xs text-slate-400 mb-1">Add money (counts as capital)</div><div className="flex gap-2"><input value={dep} onChange={e=>setDep(e.target.value)} type="number" placeholder="Amount" className="num flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/><button onClick={addMoney} className="bg-sky-600 rounded-md px-4 text-white">Add</button></div></div>
+     <div><div className="text-xs text-slate-400 mb-1">Account {srv?'(saved in database)':'(saved in this browser only)'}</div>
+      {!srv?<div className="text-xs text-slate-500">Run server.py to use accounts.</div>:user==='default'?<div className="space-y-2"><div className="text-xs text-slate-500">You are on the shared test account "default". Create your own account to keep your data private.</div>
+       <input value={nu} onChange={e=>setNu(e.target.value)} placeholder="Username" className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/>
+       <input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="Password" className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/>
+       <div className="flex gap-2"><button onClick={()=>auth('login')} className="flex-1 panel rounded-md py-1.5">Sign in</button><button onClick={()=>auth('register')} className="flex-1 bg-sky-600 text-white rounded-md py-1.5">Create account</button></div></div>
+      :<div className="flex items-center justify-between"><span>Signed in as <b>{user}</b></span><button onClick={signOut} className="panel rounded-md px-3 py-1">Sign out</button></div>}</div>
+     <div className="text-[11px] text-slate-500">Shortcuts: / search stocks &middot; Esc closes panels</div></div></>}
+  {api&&!isLive&&<div className="mb-3 text-sm bg-sky-950/60 border border-sky-800 rounded-md px-3 py-2 flex flex-wrap items-center justify-between gap-2"><span>Live DSE prices are available (as of {api.asOf||'latest'}). Your current portfolio uses simulated prices.</span>
+   <button onClick={()=>{setCap(String(s.startCash));setUseLive(true);setCfg(true)}} className="bg-sky-600 hover:bg-sky-500 rounded px-3 py-1 text-xs font-medium">Start live portfolio</button></div>}
+  {isLive&&s.behind&&<div className="mb-3 text-sm text-amber-200 bg-amber-950/60 border border-amber-800 rounded-md px-3 py-2">These prices are from {s.liveAsOf}. DSE's data source has not published {s.expected} yet. Press Refresh later.</div>}
+  {isLive&&liveErr&&<div className="mb-3 text-sm text-amber-200 bg-amber-950/60 border border-amber-800 rounded-md px-3 py-2">Can't reach the price API right now. Showing the last prices received.</div>}
+  <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+   <Stat label="Cash balance" value={tk(s.cash)}/>
+   <Stat label="Total equity" value={tk(equity)} sub={`${sg(total/s.startCash*100)}% since start`} c={cls(total)}/>
+   <Stat label="Daily gain / loss" value={(daily>=0?'+':'')+tk(daily)} sub={`${sg(daily/(s.dayStartEq||1)*100)}%`} c={cls(daily)}/>
+   <Stat label="Holdings value" value={tk(mv)}/></section>
+  <section className="grid grid-cols-2 gap-3 mb-5">
+   <Stat label="Realized P/L" value={(s.realized>=0?'+':'')+tk(s.realized)} c={cls(s.realized)}/>
+   <Stat label="Unrealized P/L" value={(unreal>=0?'+':'')+tk(unreal)} c={cls(unreal)}/></section>
+  <nav className="flex gap-1 mb-3 p-1 panel rounded-full overflow-x-auto w-fit max-w-full">
+   {[['overview','Overview'],['market','Market'],['sectors','Sectors'],['companies','Companies'],['history','History'],['portfolio',`Portfolio (${holds.length})`],['report','Daily report'],['final','Final report'],['ledger',`Ledger (${s.txns.length})`]].map(([k,l])=>
+    <button key={k} onClick={()=>setTab(k)} className={`px-4 py-1.5 text-sm rounded-full whitespace-nowrap ${tab===k?'bg-sky-600 text-white shadow':'text-slate-400 hover:text-slate-200'}`}>{l}</button>)}</nav>
+  {tab==='overview'&&<div className="grid lg:grid-cols-5 gap-3">
+   <div className="panel rounded-lg p-4 lg:col-span-3"><div className="text-sm font-medium mb-2">Net worth by trading day</div><Area data={nwData}/>
+    <div className="text-xs text-slate-500 mt-2">Cash plus holdings at each day's close. The latest point updates live as you trade.</div></div>
+   <div className="panel rounded-lg p-4 lg:col-span-2"><div className="text-sm font-medium mb-2">Sector allocation</div>
+    {!sectors.length?<div className="text-sm text-slate-500 py-10 text-center">Buy a stock to see your sector exposure.</div>:<>
+     {over.length>0&&<div className="mb-3 text-sm text-amber-200 bg-amber-950/60 border border-amber-800 rounded-md px-3 py-2">Concentration warning: {over.map(o=>`${o.name} is ${fmt(o.pct,1)}%`).join(', ')} of holdings. Keep any one sector under 35%.</div>}
+     <div className="flex items-center gap-4 flex-wrap"><Donut parts={sectors}/>
+      <ul className="text-sm space-y-1 flex-1 min-w-[150px]">{sectors.map(x=><li key={x.name} className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-sm" style={{background:x.color}}/><span className="flex-1 truncate">{x.name}</span>
+       <span className={`num ${x.pct>35?'text-amber-300 font-medium':'text-slate-300'}`}>{fmt(x.pct,1)}%{x.pct>35?' !':''}</span></li>)}</ul></div></>}</div></div>}
+  {tab==='report'&&<div className="space-y-3">
+   <div className="flex flex-wrap items-center justify-between gap-2"><div><div className="font-medium">End-of-day report</div><div className="text-xs text-slate-400">{dateOf(s.day)} &middot; Day {s.day+1}</div></div>
+    <button onClick={exportCsv} className="bg-sky-600 hover:bg-sky-500 rounded-md px-4 py-2 text-sm font-medium">Export transactions to CSV</button></div>
+   <div className="grid sm:grid-cols-2 gap-3">
+    <div className="panel rounded-lg p-4 text-sm num space-y-1.5">{[['Opening equity',tk(s.dayStartEq)],['Closing cash',tk(s.cash)],['Closing holdings value',tk(mv)],['Closing equity',tk(equity)]].map(([a,b])=><div key={a} className="flex justify-between"><span className="text-slate-400 font-sans">{a}</span><span>{b}</span></div>)}
+     <div className="flex justify-between border-t border-slate-700 pt-1.5"><span className="text-slate-400 font-sans">Daily P&amp;L</span><span className={cls(daily)}>{sg(daily)} Tk ({sg(daily/(s.dayStartEq||1)*100)}%)</span></div>
+     <div className="flex justify-between"><span className="text-slate-400 font-sans">Total return since start</span><span className={cls(total)}>{sg(total)} Tk ({sg(total/s.startCash*100)}%)</span></div></div>
+    <div className="panel rounded-lg p-4 text-sm space-y-2">
+     <div><div className="text-xs text-slate-400">Top performing asset</div>{best&&best.p>0?<div className="num"><b className="font-sans">{best.sym}</b> <span className="text-emerald-400">+{fmt(best.p)} Tk ({sg(best.pct)}%)</span></div>:<div className="text-slate-500">None today</div>}</div>
+     <div><div className="text-xs text-slate-400">Worst dragging asset</div>{worst&&worst.p<0?<div className="num"><b className="font-sans">{worst.sym}</b> <span className="text-rose-400">{fmt(worst.p)} Tk ({sg(worst.pct)}%)</span></div>:<div className="text-slate-500">None today</div>}</div>
+     <div><div className="text-xs text-slate-400">Brokerage fees accumulated</div><div className="num">{tk(fees)} <span className="text-xs text-slate-500">across {s.txns.length} trades</span></div></div></div></div>
+   <div className="panel rounded-lg overflow-x-auto"><table className="w-full num"><thead><tr><th>Holding</th><th>Qty</th><th>Close</th><th>Day P&amp;L (Tk)</th><th>Day %</th></tr></thead><tbody>
+    {ranked.map(r=><tr key={r.sym}><td className="font-sans font-medium">{r.sym}</td><td>{holds.find(h=>h.symbol===r.sym).qty}</td><td>{fmt(px[r.sym].ltp)}</td><td className={cls(r.p)}>{sg(r.p)}</td><td className={cls(r.p)}>{sg(r.pct)}%</td></tr>)}
+    {!ranked.length&&<tr><td colSpan="5" className="!text-center text-slate-500 py-6 font-sans">No open positions.</td></tr>}</tbody></table></div></div>}
+  {tab==='sectors'&&<Sectors market={s.market} onPick={setDrawer}/>}
+  {tab==='companies'&&<Companies market={s.market} onPick={setDrawer} srv={srv}/>}
+  {tab==='history'&&<History px={px} srv={srv}/>}
+  {tab==='final'&&<div className="space-y-3">
+   <div className="panel rounded-lg p-4"><div className="font-medium mb-1">Submission details</div><div className="text-xs text-slate-400 mb-3">Fill these in, then download or print the report below for your instructor.</div>
+    <div className="grid sm:grid-cols-2 gap-2">{[['name','Student name'],['id','Student ID'],['course','Course / section'],['instructor','Instructor'],['semester','Semester']].map(([k,l])=>
+     <input key={k} value={prof[k]||''} onChange={e=>setP(k,e.target.value)} placeholder={l} className="bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:border-sky-500"/>)}</div>
+    <textarea value={prof.notes||''} onChange={e=>setP('notes',e.target.value)} rows="4" placeholder="Strategy and reflection: what you bought and why, what you learned, what you would change." className="w-full mt-2 bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:border-sky-500"/>
+    <div className="flex flex-wrap gap-2 mt-3"><button onClick={exportReport} className="bg-sky-600 hover:bg-sky-500 rounded-md px-4 py-2 text-sm font-medium">Download report (HTML)</button>
+     <button onClick={()=>{try{window.print()}catch(e){}}} className="panel rounded-md px-4 py-2 text-sm">Print / save as PDF</button><button onClick={exportCsv} className="panel rounded-md px-4 py-2 text-sm">Transactions CSV</button></div></div>
+   <div className="rptwrap" ref={rpt}><div className="rpt">
+    <h1>DSE Portfolio Simulation: Final Report</h1><div className="rmuted">Dhaka Stock Exchange &middot; fictional capital &middot; {isLive?'live DSE prices':'simulated prices'}</div>
+    <h2>Student and period</h2><table><tbody>{[['Student',prof.name],['Student ID',prof.id],['Course / section',prof.course],['Instructor',prof.instructor],['Semester',prof.semester],['Period',`${dateOf(0)} to ${dateOf(s.day)}`],['Trading days',s.day+1],['Report generated',new Date().toLocaleDateString('en-GB')]].map(([a,b])=><tr key={a}><td style={{width:'30%'}}>{a}</td><td style={{textAlign:'left'}}>{b||'-'}</td></tr>)}</tbody></table>
+    <h2>Result summary</h2><div className="rkpi">{[['Starting capital',tk(s.startCash),''],['Final equity',tk(equity),''],['Net profit / loss',(total>=0?'+':'')+tk(total),rc(total)],['Total return',sg(total/s.startCash*100)+'%',rc(total)],['Realized P/L',(s.realized>=0?'+':'')+tk(s.realized),rc(s.realized)],['Unrealized P/L',(unreal>=0?'+':'')+tk(unreal),rc(unreal)],['Brokerage paid',tk(fees),''],['Cash',tk(s.cash),'']].map(([a,b,c])=><div key={a}><div className="rmuted">{a}</div><b className={c}>{b}</b></div>)}</div>
+    <h2>Asset allocation</h2><div style={{display:'flex',height:14,borderRadius:4,overflow:'hidden',background:'#e5e7eb'}}><div style={{width:`${Math.max(0,Math.min(100,s.cash/equity*100))}%`,background:'#94a3b8'}}/><div style={{flex:1,background:'#0369a1'}}/></div>
+    <div className="rmuted">Cash {fmt(s.cash/equity*100,1)}% (Tk {fmt(s.cash)}) &middot; Equities {fmt(mv/equity*100,1)}% (Tk {fmt(mv)}){sectors.length?` · Sectors: ${sectors.map(x=>`${x.name} ${fmt(x.pct,0)}%`).join(', ')}`:''}</div>
+    <h2>Net worth by trading day</h2><Spark data={nwData}/>
+    <h2>Performance statistics</h2><table><tbody>{[['Total trades',`${s.txns.length} (${s.txns.length-sells.length} buys, ${sells.length} sells)`],['Closed trades in profit',sells.length?`${wins} of ${sells.length} (${fmt(wins/sells.length*100,0)}%)`:'n/a'],['Best day',bestD?`${bestD.l}: ${sg(bestD.p)} Tk (${sg(bestD.r)}%)`:'n/a'],['Worst day',worstD?`${worstD.l}: ${sg(worstD.p)} Tk (${sg(worstD.r)}%)`:'n/a'],['Maximum drawdown',`${fmt(mdd)}%`],['Largest sector exposure',sectors[0]?`${sectors[0].name}, ${fmt(sectors[0].pct,1)}% of holdings`:'n/a']].map(([a,b])=><tr key={a}><td style={{width:'30%'}}>{a}</td><td style={{textAlign:'left'}}>{b}</td></tr>)}</tbody></table>
+    <h2>Open positions</h2><div className="rtbl"><table><thead><tr><th>Symbol</th><th>Sector</th><th>Qty</th><th>Avg cost</th><th>Price</th><th>Value</th><th>Unrealized P/L</th><th>Weight</th></tr></thead><tbody>
+     {holds.map(h=>{const m=px[h.symbol],v=h.qty*m.ltp,u=v-h.cost;return <tr key={h.symbol}><td>{h.symbol}</td><td>{m.sector}</td><td>{h.qty}</td><td>{fmt(h.gross/h.qty)}</td><td>{fmt(m.ltp)}</td><td>{fmt(v)}</td><td className={rc(u)}>{sg(u)}</td><td>{fmt(v/equity*100,1)}%</td></tr>})}
+     {!holds.length&&<tr><td colSpan="8" style={{textAlign:'center'}}>No open positions.</td></tr>}</tbody></table></div>
+    <h2>Closed trades</h2><div className="rtbl"><table><thead><tr><th>Date</th><th>Symbol</th><th>Qty</th><th>Sell price</th><th>Fee</th><th>Realized P/L</th></tr></thead><tbody>
+     {[...sells].reverse().map(t=><tr key={t.id}><td>{t.simDate}</td><td>{t.symbol}</td><td>{t.qty}</td><td>{fmt(t.price)}</td><td>{fmt(t.fee)}</td><td className={rc(t.pnl)}>{sg(t.pnl)}</td></tr>)}
+     {!sells.length&&<tr><td colSpan="6" style={{textAlign:'center'}}>No closed trades.</td></tr>}</tbody></table></div>
+    <h2>Transaction ledger</h2><div className="rtbl"><table><thead><tr><th>ID</th><th>Date</th><th>Type</th><th>Symbol</th><th>Qty</th><th>Price</th><th>Fee</th><th>Net amount</th><th>Journal note</th></tr></thead><tbody>
+     {[...s.txns].reverse().map(t=><tr key={t.id}><td>{t.id}</td><td>{t.simDate}</td><td>{t.type}</td><td>{t.symbol}</td><td>{t.qty}</td><td>{fmt(t.price)}</td><td>{fmt(t.fee)}</td><td>{fmt(t.total)}</td><td style={{textAlign:'left',whiteSpace:'normal',minWidth:180}}>{t.note||''}</td></tr>)}
+     {!s.txns.length&&<tr><td colSpan="9" style={{textAlign:'center'}}>No transactions.</td></tr>}</tbody></table></div>
+    {prof.notes&&<><h2>Strategy and reflection</h2><p style={{whiteSpace:'pre-wrap',margin:0}}>{prof.notes}</p></>}
+    <p className="rmuted" style={{marginTop:18}}>Simulated trading with fictional capital. Commission 0.35% per trade; settlement T+2 (A/B/N) and T+3 (Z); circuit limits &plusmn;10% of the previous close. {isLive?`Prices from the DSE website, last updated ${s.liveAsOf||'n/a'}.`:'Prices in this report are simulated, not real DSE prices.'}</p>
+   </div></div></div>}
+  {tab==='market'&&<>
+   <div className="flex flex-wrap gap-2 mb-3"><div className="relative flex-1 min-w-[180px]"><span className="absolute left-3 top-2.5 text-slate-500"><Ic d={I.search}/></span>
+    <input id="q" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search symbol or company  ( / )" className="w-full panel rounded-md pl-9 pr-3 py-2 text-sm outline-none focus:border-sky-500"/></div>
+    <div className="flex gap-1">{['All','A','B','Z','★'].map(c=><button key={c} onClick={()=>setCat(c)} className={`px-3 py-2 rounded-md text-sm ${cat===c?'bg-sky-600 text-white':'panel text-slate-300'}`}>{c}</button>)}</div></div>
+   <div className="panel rounded-lg overflow-x-auto"><table className="w-full num"><thead><tr>{[['symbol','Symbol'],['cat','Cat'],['sector','Sector'],['ltp','LTP'],['high','High'],['low','Low'],['close','YCP'],['chg','Change']].map(([k,l])=><th key={k} onClick={()=>setSort(o=>({k,d:o.k===k?-o.d:1}))} className="cursor-pointer select-none">{l}{sort.k===k?(sort.d>0?' ▲':' ▼'):''}</th>)}<th></th></tr></thead><tbody>
+    {shown.slice(0,400).map(m=><tr key={m.symbol}><td className="font-sans"><button onClick={()=>toggleWatch(m.symbol)} className="mr-1 text-amber-300">{(s.watch||[]).includes(m.symbol)?'★':'☆'}</button><button onClick={()=>setDrawer(m.symbol)} className="font-medium text-sky-300 hover:underline">{m.symbol}</button><div className="text-xs text-slate-500">{m.name}</div></td><td className="font-sans">{m.cat}</td>
+     <td className="font-sans text-slate-400">{m.sector}</td><td className={cls(m.chg)}>{fmt(m.ltp)}</td><td>{fmt(m.high)}</td><td>{fmt(m.low)}</td><td className="text-slate-400">{fmt(m.close)}</td>
+     <td className={cls(m.chg)}><span className="inline-flex items-center gap-1">{m.chg!==0&&<Ic s={13} d={m.chg>0?I.up:I.down}/>}{sg(m.chg)}%</span></td>
+     <td className="font-sans"><button onClick={()=>setOrder({m,side:'BUY'})} className="bg-emerald-600/90 hover:bg-emerald-500 text-white rounded px-3 py-1 text-xs mr-1">Buy</button>
+      <button onClick={()=>setOrder({m,side:'SELL'})} className="bg-rose-600/90 hover:bg-rose-500 text-white rounded px-3 py-1 text-xs">Sell</button></td></tr>)}
+    {!rows.length&&<tr><td colSpan="9" className="!text-center text-slate-500 py-8 font-sans">No stocks match. Try another search or category.</td></tr>}</tbody></table></div></>}
+  {tab==='portfolio'&&<div className="panel rounded-lg overflow-x-auto"><table className="w-full num"><thead><tr><th>Symbol</th><th>Cat</th><th>Qty</th><th>Avg buy</th><th>LTP</th><th>Value</th><th>Unrealized P/L</th><th>Bought</th><th>Status</th><th></th></tr></thead><tbody>
+   {holds.map(h=>{const m=px[h.symbol],v=h.qty*m.ltp,u=v-h.cost;return <tr key={h.symbol}><td className="font-sans font-medium"><button onClick={()=>setDrawer(h.symbol)} className="text-sky-300 hover:underline">{h.symbol}</button></td><td className="font-sans">{h.cat}</td><td>{h.qty}</td>
+    <td>{fmt(h.gross/h.qty)}</td><td>{fmt(m.ltp)}</td><td>{fmt(v)}</td><td className={cls(u)}>{sg(u)} <span className="text-xs">({sg(u/h.cost*100)}%)</span></td><td className="font-sans text-slate-400">{h.date}</td>
+    <td className="font-sans">{h.mat===h.qty?<span className="text-emerald-400">Matured</span>:<span className="text-amber-400">{h.mat?`${h.mat} matured, `:''}T+{need(h.cat)} in {h.next}d</span>}</td>
+    <td className="font-sans"><button onClick={()=>setOrder({m,side:'SELL'})} className="bg-rose-600/90 hover:bg-rose-500 text-white rounded px-3 py-1 text-xs">Sell</button></td></tr>})}
+   {!holds.length&&<tr><td colSpan="10" className="!text-center text-slate-500 py-8 font-sans">No holdings yet. Pick a stock in Market and place your first buy order.</td></tr>}</tbody></table></div>}
+  {tab==='ledger'&&<div className="panel rounded-lg overflow-x-auto"><table className="w-full num"><thead><tr><th>ID</th><th>Trade day</th><th>Type</th><th>Symbol</th><th>Qty</th><th>Price</th><th>Fee</th><th>Total</th><th>Realized P/L</th><th>Journal note</th></tr></thead><tbody>
+   {s.txns.map(t=><tr key={t.id}><td className="font-sans text-slate-400">{t.id}<div className="text-[11px] text-slate-600">{new Date(t.ts).toLocaleString()}</div></td><td className="font-sans">{t.simDate}</td>
+    <td className={`font-sans ${t.type==='BUY'?'text-emerald-400':'text-rose-400'}`}>{t.type}</td><td className="font-sans">{t.symbol}</td><td>{t.qty}</td><td>{fmt(t.price)}</td><td>{fmt(t.fee)}</td><td>{fmt(t.total)}</td>
+    <td className={t.pnl==null?'text-slate-600':cls(t.pnl)}>{t.pnl==null?'–':sg(t.pnl)}</td><td className="font-sans text-slate-400 !text-left max-w-[260px] truncate" title={t.note}>{t.note||'–'}</td></tr>)}
+   {!s.txns.length&&<tr><td colSpan="10" className="!text-center text-slate-500 py-8 font-sans">No transactions yet.</td></tr>}</tbody></table></div>}
+  <p className="text-xs text-slate-600 mt-4">{isLive?'Live DSE prices via your API.':'Prices are simulated.'} Commission 0.35% on each trade. Settlement: T+2 for A/B/N, T+3 for Z. Circuit limits are &plusmn;10% of the previous close.</p>
+  {order&&<OrderModal stock={px[order.m.symbol]} side0={order.side} s={s} onClose={()=>setOrder(null)} onSubmit={trade}/>}
+  {drawer&&<Drawer stock={px[drawer]} onClose={()=>setDrawer(null)} onTrade={side=>setOrder({m:px[drawer],side})} held={holds.find(h=>h.symbol===drawer)}/>}
+  {csvView&&<div className="fixed inset-0 z-50 flex items-center justify-center scrim p-3" onClick={()=>setCsvView('')}><div className="panel rounded-xl w-full max-w-2xl p-4" onClick={e=>e.stopPropagation()}>
+   <div className="text-sm mb-2">Direct download isn't available here. Copy this text and save it as a file (.csv for transactions, .html for the report).</div><textarea readOnly value={csvView} onFocus={e=>e.target.select()} className="num w-full h-64 bg-slate-900 border border-slate-700 rounded-md p-2 text-xs"/>
+   <button onClick={()=>setCsvView('')} className="mt-2 panel rounded-md px-4 py-2 text-sm">Close</button></div></div>}
+  {cfg&&<div className="fixed inset-0 z-50 flex items-center justify-center scrim p-3" onClick={()=>setCfg(false)}><div className="panel rounded-xl w-full max-w-sm p-5" onClick={e=>e.stopPropagation()}>
+   <div className="font-semibold mb-1">Reset simulation</div><p className="text-sm text-slate-400 mb-3">This clears all holdings and transactions and starts again from day 1 with your chosen starting capital.</p>
+   <label className="text-xs text-slate-400">Starting capital (Tk)</label>
+   <input value={cap} onChange={e=>setCap(e.target.value)} type="number" className="num w-full mt-1 mb-4 bg-slate-900 border border-slate-700 rounded-md px-3 py-2 outline-none focus:border-sky-500"/>
+   {api&&<label className="flex items-center gap-2 text-sm text-slate-300 mb-4"><input type="checkbox" checked={useLive} onChange={e=>setUseLive(e.target.checked)}/>Use live DSE prices (real trading days)</label>}
+   <div className="flex gap-2"><button onClick={()=>setCfg(false)} className="flex-1 panel rounded-md py-2 text-sm">Cancel</button>
+    <button onClick={()=>{const c=+cap;if(c>0){setS(useLive&&api?freshLive(c,api):fresh(c));setCfg(false);say(useLive&&api?'Live portfolio started':'Simulation reset')}}} className="flex-1 bg-rose-600 hover:bg-rose-500 rounded-md py-2 text-sm font-medium">Reset and start</button></div></div></div>}
+  {toast&&<div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] bg-slate-100 text-slate-900 text-sm rounded-md px-4 py-2 shadow-lg">{toast}</div>}
+ </div>;}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

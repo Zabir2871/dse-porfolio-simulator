@@ -1,5 +1,5 @@
 """DSE data layer built on the bdshare library (it tracks DSE's site changes for us)."""
-import json, re, time, threading
+import json, os, re, time, threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -10,11 +10,11 @@ STATE_FILE = BASE / "state.json"
 
 _ALIASES = {  # normalised column name -> our field
     "symbol": "symbol", "tradingcode": "symbol", "code": "symbol",
-    "ltp": "ltp", "high": "high", "low": "low",
+    "ltp": "ltp", "lasttradingprice": "ltp", "lasttradeprice": "ltp", "high": "high", "low": "low",
     "close": "close", "closep": "close", "closeprice": "close",
-    "ycp": "ycp", "change": "change",
+    "ycp": "ycp", "yesterdayclosingprice": "ycp", "change": "change",
     "trade": "trades", "trades": "trades",
-    "value": "valueMn", "valuemn": "valueMn", "volume": "volume",
+    "value": "valueMn", "valueinmn": "valueMn", "valuemn": "valueMn", "volume": "volume",
 }
 
 
@@ -67,9 +67,52 @@ def trading_date(signature):
     return guess
 
 
+UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+      "Accept": "application/json, text/plain, */*", "Accept-Language": "en-US,en;q=0.9",
+      "Referer": "https://dse.com.bd/markets/latest-share-price", "Origin": "https://dse.com.bd"}
+NEW_API = "https://dse.com.bd/api/live/prices"
+
+
+def _http_get(url, timeout=15):
+    import requests
+    try:
+        return requests.get(url, headers=UA, timeout=timeout)
+    except requests.exceptions.SSLError:
+        return requests.get(url, headers=UA, timeout=timeout, verify=False)
+
+
+def fetch_new_direct():
+    """Best effort: DSE's current JSON feed with browser-like headers. Returns a DataFrame or None (403 for many networks)."""
+    import pandas as pd
+    try:
+        r = _http_get(NEW_API)
+        if r.status_code != 200:
+            return None
+        j = r.json()
+        rec = j if isinstance(j, list) else next((v for v in j.values() if isinstance(v, list)), None) if isinstance(j, dict) else None
+        return pd.DataFrame(rec) if rec else None
+    except Exception:
+        return None
+
+
+def legacy_page_date():
+    """The old price page states 'Latest Share Price On <date>': the only reliable as-of date we have."""
+    for u in ("https://old.dsebd.org/latest_share_price_scroll_l.php", "https://www.dsebd.org/latest_share_price_scroll_l.php"):
+        try:
+            r = _http_get(u)
+            m = re.search(r"Latest Share Price On\s*([A-Za-z]{3})[a-z]*\s+(\d{1,2}),\s*(\d{4})", re.sub(r"<[^>]+>", " ", r.text))
+            if m:
+                return datetime.strptime(f"{m.group(1)} {m.group(2)} {m.group(3)}", "%b %d %Y").date()
+        except Exception:
+            pass
+    return None
+
+
 def fetch_market():
-    from bdshare import get_current_trade_data  # imported here so the module loads without it
-    df = get_current_trade_data()
+    df, src = fetch_new_direct(), "dse.com.bd"
+    if df is None or len(df) == 0:
+        from bdshare import get_current_trade_data  # imported here so the module loads without it
+        df, src = get_current_trade_data(), "bdshare"
     if df is None or len(df) == 0:
         raise RuntimeError("bdshare returned no data (DSE unreachable or blocked)")
     if "symbol" not in {re.sub(r"[^a-z]", "", str(c).lower()) for c in df.columns}:
@@ -106,9 +149,12 @@ def fetch_market():
         })
     if len(stocks) < 100:
         raise RuntimeError(f"Only {len(stocks)} stocks parsed; DSE data looks incomplete")
-    d = trading_date(sig)
-    return {"source": "bdshare", "fetchedAt": datetime.now(DHAKA).isoformat(),
-            "asOf": d.strftime("%b %d, %Y"), "count": len(stocks), "stocks": stocks}
+    expected = last_trading_date()
+    page = legacy_page_date() if src == "bdshare" else None
+    d = page or trading_date(sig)
+    return {"source": src, "fetchedAt": datetime.now(DHAKA).isoformat(), "asOf": d.strftime("%b %d, %Y"),
+            "dateSource": "page" if page else "estimated", "expectedDate": expected.strftime("%b %d, %Y"),
+            "behind": d < expected, "count": len(stocks), "stocks": stocks}
 
 
 def fetch_history(symbol, days=370):
