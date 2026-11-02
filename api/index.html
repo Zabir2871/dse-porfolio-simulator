@@ -26,6 +26,8 @@ html[data-theme=light] .bg-slate-950{background:rgba(245,247,255,.7)!important}
 .border-slate-700,.border-slate-800{border-color:var(--glb)!important}
 .text-slate-400,.text-slate-500,.text-slate-600{color:var(--mut)!important}.text-slate-300,.text-slate-200{color:var(--tx)!important}
 .bg-black\/70,.bg-black\/60{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+html .scrim{background:rgba(0,0,0,.4);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%)}
+.scrim>.panel,.menu{background:rgba(20,26,54,.8)!important}html[data-theme=light] .scrim>.panel,html[data-theme=light] .menu{background:rgba(255,255,255,.88)!important}
 button{transition:transform .15s,filter .15s}button:active{transform:scale(.95)}
 input,textarea,select{color:var(--tx)}select{background:var(--gl);border:1px solid var(--glb);border-radius:999px;padding:6px 12px}option{color:#111}
 th{font-weight:500;color:var(--mut);font-size:12px;text-align:right;padding:8px 12px;white-space:nowrap}
@@ -69,6 +71,7 @@ const cls=n=>n>0.0001?'text-emerald-400':n<-0.0001?'text-rose-400':'text-slate-4
 const need=c=>c==='Z'?3:2;
 const limits=m=>({up:r1(m.close*1.1),lo:r1(m.close*0.9)});
 let DATES={},LIVE_OK=false,CFG={};
+const authH=()=>{try{const t=localStorage.getItem('dse-token');return t?{'X-Token':t}:{}}catch(e){return {}}};
 const lab=iso=>{const [y,m,d]=iso.split('-').map(Number);return new Date(Date.UTC(y,m-1,d)).toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});};
 function dateOf(day){if(DATES[day])return DATES[day];const d=new Date(Date.UTC(2026,10,1));let n=day;while(n>0){d.setUTCDate(d.getUTCDate()+1);const w=d.getUTCDay();if(w!==5&&w!==6)n--;}
  return d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});}
@@ -91,13 +94,13 @@ function freshLive(cap,d){const iso=parseAsOf(d.asOf)||new Date().toLocaleDateSt
  return {startCash:cap,cash:cap,realized:0,day:0,dayStartEq:cap,lots:[],txns:[],nw:[{day:0,eq:cap}],mode:'live',liveDate:iso,dates:{0:lab(iso)},liveAsOf:d.asOf,marketOpen:d.marketOpen,market:mergeLive([],d.stocks,false)};}
 function applyLive(p,d){const iso=parseAsOf(d.asOf)||p.liveDate,nd=iso>p.liveDate;
  const eqOf=st=>st.cash+st.lots.reduce((a,l)=>a+l.qty*st.market.find(m=>m.symbol===l.symbol).ltp,0);
- let n={...p,market:mergeLive(p.market,d.stocks,nd),liveAsOf:d.asOf,marketOpen:d.marketOpen,stale:!!d.stale};
+ let n={...p,market:mergeLive(p.market,d.stocks,nd),liveAsOf:d.asOf,marketOpen:d.marketOpen,stale:!!d.stale,behind:!!d.behind,expected:d.expectedDate};
  if(nd){const day=p.day+Math.max(1,tdBetween(p.liveDate,iso));n={...n,dayStartEq:eqOf(p),day,liveDate:iso,dates:{...p.dates,[day]:lab(iso)}};n.nw=[...(p.nw||[]),{day,eq:eqOf(n)}];}
  return n;}
 const PAL=['#38bdf8','#34d399','#fbbf24','#f472b6','#a78bfa','#fb923c','#2dd4bf','#94a3b8'];
 const CAT={A:'Regular dividend (10%+) and AGM held. Settles T+2.',B:'Dividend below 10%. Settles T+2.',N:'Newly listed. Settles T+2.',Z:'Missed dividend/AGM or running at a loss. Higher risk, settles T+3.'};
 const fresh=(cap=500000)=>({startCash:cap,cash:cap,realized:0,day:0,dayStartEq:cap,lots:[],txns:[],nw:[{day:0,eq:cap}],market:tick(seedMarket())});
-function load(){try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.market)return {...j,market:j.market.map(m=>m.hist?m:{...m,...extra(m.ltp)})};}catch(e){}return fresh();}
+function load(){try{const u=localStorage.getItem('dse-user')||'default';const j=JSON.parse(localStorage.getItem(KEY+':'+u)||(u==='default'?localStorage.getItem(KEY):null));if(j&&j.market)return {...j,market:j.market.map(m=>m.hist?m:{...m,...extra(m.ltp)})};}catch(e){}return fresh();}
 const Ic=({d,s=16})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 const I={
  search:<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>,x:<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
@@ -116,7 +119,7 @@ function OrderModal({stock,side0,s,onClose,onSubmit}){
  const mat=s.lots.filter(l=>l.symbol===stock.symbol&&s.day-l.day>=need(l.cat)).reduce((a,l)=>a+l.qty,0);
  const held=s.lots.filter(l=>l.symbol===stock.symbol).reduce((a,l)=>a+l.qty,0);
  const q=Math.floor(+qty)||0,p=+price||0,gross=q*p,fee=gross*FEE,total=side==='BUY'?gross+fee:gross-fee;
- return <div className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center bg-black/70 p-3" onClick={onClose}>
+ return <div className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center scrim p-3" onClick={onClose}>
  <div className="panel rounded-xl w-full max-w-md p-5" onClick={e=>e.stopPropagation()}>
   <div className="flex justify-between items-start mb-4"><div><div className="text-lg font-semibold">{stock.symbol} <span className="text-xs text-slate-400 font-normal">Cat {stock.cat}</span></div>
    <div className="text-xs text-slate-400">{stock.name}</div></div><button onClick={onClose} className="text-slate-400 hover:text-white"><Ic d={I.x} s={20}/></button></div>
@@ -165,7 +168,7 @@ function Drawer({stock:m,onClose,onTrade,held}){
  useEffect(()=>{if(!m.live)return;let on=true;fetch('/api/dse-history/'+encodeURIComponent(m.symbol)).then(r=>r.ok?r.json():null).then(j=>{if(on&&j&&j.closes&&j.closes.length>1)setRh(j)}).catch(()=>{});return()=>{on=false};},[m.symbol]);
  const hist=rh?rh.closes:m.hist,hi=rh?rh.hi52:m.hi52,lo=rh?rh.lo52:m.lo52,n=hist.length,pos=(m.ltp-lo)/((hi-lo)||1)*100;
  const data=hist.map((v,i)=>({l:i===n-1?'Today':`${n-1-i} day${n-1-i>1?'s':''} ago`,v}));
- return <div className="fixed inset-0 z-40 flex justify-end bg-black/60" onClick={onClose}><aside className="w-full sm:max-w-md h-full overflow-y-auto bg-slate-950 border-l border-slate-800 p-5" onClick={e=>e.stopPropagation()}>
+ return <div className="fixed inset-0 z-40 flex justify-end scrim" onClick={onClose}><aside className="w-full sm:max-w-md h-full overflow-y-auto bg-slate-950 border-l border-slate-800 p-5" onClick={e=>e.stopPropagation()}>
   <div className="flex justify-between items-start mb-4"><div><div className="text-xl font-semibold">{m.symbol}</div><div className="text-sm text-slate-400">{m.name} &middot; {m.sector}</div></div><button onClick={onClose} className="text-slate-400 hover:text-white"><Ic d={I.x} s={20}/></button></div>
   <div className="flex items-baseline gap-3 mb-4 num"><span className="text-3xl">{fmt(m.ltp)}</span><span className={cls(m.chg)}>{sg(m.chg)}%</span></div>
   <div className="panel rounded-lg p-3 mb-3"><div className="text-xs text-slate-400 mb-1">Price history</div><Area data={data}/></div>
@@ -233,17 +236,17 @@ function History({px,srv}){
    {list.slice(0,400).map(r=><tr key={r.symbol}><td><b>{r.symbol}</b></td><td className="num">{fmt(r.ltp)}</td><td className="num">{fmt(r.ycp)}</td><td className={`num ${cls(r.chg)}`}>{sg(r.chg)}%</td><td className="num">{fmt(r.high)}</td><td className="num">{fmt(r.low)}</td><td className="num">{fmt(r.volume,0)}</td><td className="num">{r.now?fmt(r.now):'-'}</td></tr>)}</tbody></table></div></div>;}
 function App(){
  const [s,setS]=useState(load);DATES=s.dates||{};CFG=s.prefs||{};const [tab,setTab]=useState('overview');const [q,setQ]=useState('');const [cat,setCat]=useState('All');
- const [srv,setSrv]=useState(false),[users,setUsers]=useState([]),[menu,setMenu]=useState(false),[dep,setDep]=useState(''),[nu,setNu]=useState(''),[sort,setSort]=useState({k:'symbol',d:1});
+ const [srv,setSrv]=useState(false),[users,setUsers]=useState([]),[menu,setMenu]=useState(false),[dep,setDep]=useState(''),[nu,setNu]=useState(''),[pw,setPw]=useState(''),[sort,setSort]=useState({k:'symbol',d:1});
  const [user,setUser]=useState(()=>{try{return localStorage.getItem('dse-user')||'default'}catch(e){return 'default'}});const ready=useRef(false);
  const [api,setApi]=useState(null);const [liveErr,setLiveErr]=useState(false);const [useLive,setUseLive]=useState(false);const rpt=useRef(null);
  const isLive=s.mode==='live';
- async function poll(){try{const r=await fetch('/api/dse-live');if(!r.ok)throw 0;const d=await r.json();if(!d.stocks||!d.stocks.length)throw 0;LIVE_OK=true;setApi(d);setLiveErr(false);setS(p=>p.mode==='live'?applyLive(p,d):p);}catch(e){setLiveErr(true);}}
- useEffect(()=>{const was=s.mode==='live';poll();const t=setInterval(()=>{if(document.visibilityState==='visible'&&(LIVE_OK||was))poll();},60000);return()=>clearInterval(t);},[]);
+ async function poll(fresh){try{const r=await fetch('/api/dse-live'+(fresh===true?'?fresh=1':''));if(!r.ok)throw 0;const d=await r.json();if(!d.stocks||!d.stocks.length)throw 0;LIVE_OK=true;setApi(d);setLiveErr(false);setS(p=>p.mode==='live'?applyLive(p,d):p);if(fresh===true)say('Prices updated: '+(d.asOf||'latest')+(d.behind?' (DSE has not published newer prices yet)':''));}catch(e){setLiveErr(true);if(fresh===true)say("Couldn't reach the price server");}}
+ useEffect(()=>{poll();},[]);
  const [drawer,setDrawer]=useState(null);const [dl,setDl]=useState(null);const [csvView,setCsvView]=useState('');
  const [order,setOrder]=useState(null);const [toast,setToast]=useState('');const [cfg,setCfg]=useState(false);const [cap,setCap]=useState('500000');
  useEffect(()=>{try{window.claude.use('downloads').then(d=>setDl(d||null)).catch(()=>{})}catch(e){}},[]);
- useEffect(()=>{try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}
-  if(!ready.current)return;const t=setTimeout(()=>{fetch('/api/state/'+encodeURIComponent(user),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)}).catch(()=>{})},800);return()=>clearTimeout(t);},[s]);
+ useEffect(()=>{try{localStorage.setItem(KEY+':'+user,JSON.stringify(s))}catch(e){}
+  if(!ready.current)return;const t=setTimeout(()=>{fetch('/api/state/'+encodeURIComponent(user),{method:'PUT',headers:{'Content-Type':'application/json',...authH()},body:JSON.stringify(s)}).catch(()=>{})},800);return()=>clearTimeout(t);},[s]);
  const px=useMemo(()=>Object.fromEntries(s.market.map(m=>[m.symbol,m])),[s.market]);
  const eq=st=>st.cash+st.lots.reduce((a,l)=>a+l.qty*(st.market.find(m=>m.symbol===l.symbol).ltp),0);
  const equity=eq(s),mv=equity-s.cash,cost=s.lots.reduce((a,l)=>a+l.cost,0),unreal=mv-cost,daily=equity-s.dayStartEq,total=equity-s.startCash;
@@ -296,10 +299,12 @@ function App(){
  const P=s.prefs||{};const setPref=(k,v)=>setS(p=>({...p,prefs:{...(p.prefs||{}),[k]:v}}));
  const toggleWatch=sym=>setS(p=>({...p,watch:(p.watch||[]).includes(sym)?p.watch.filter(x=>x!==sym):[...(p.watch||[]),sym]}));
  const addMoney=()=>{const a=+dep;if(!(a>0))return;setS(p=>({...p,cash:r2(p.cash+a),startCash:r2(p.startCash+a),dayStartEq:p.dayStartEq+a,deposits:[...(p.deposits||[]),{amount:a,date:dateOf(p.day)}]}));setDep('');say('Added '+tk(a));};
- const refreshUsers=()=>fetch('/api/users').then(r=>r.json()).then(setUsers).catch(()=>{});
  function switchUser(u){ready.current=false;try{localStorage.setItem('dse-user',u)}catch(e){}setS(fresh(500000));setUser(u);setMenu(false);}
- async function newUser(){const n=nu.trim();if(!n)return;try{await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n})});}catch(e){}setNu('');switchUser(n);}
- useEffect(()=>{ready.current=false;(async()=>{try{const r=await fetch('/api/state/'+encodeURIComponent(user));if(r.ok)setS(await r.json());else if(r.status!==404)throw 0;setSrv(true);refreshUsers();}catch(e){}ready.current=true;})();},[user]);
+ function signOut(){try{localStorage.removeItem('dse-token')}catch(e){}switchUser('default');}
+ async function auth(kind){const n=nu.trim();if(!n||!pw){say('Enter a username and password');return;}
+  try{const r=await fetch('/api/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,password:pw})});const j=await r.json().catch(()=>({}));
+   if(!r.ok){say(j.detail||'Failed');return;}localStorage.setItem('dse-token',j.token);setNu('');setPw('');switchUser(j.name);}catch(e){say('Server not reachable');}}
+ useEffect(()=>{ready.current=false;(async()=>{try{const r=await fetch('/api/state/'+encodeURIComponent(user),{headers:authH()});setSrv(true);if(r.ok)setS(await r.json());else if(r.status===401){signOut();return;}else if(r.status!==404)throw 0;}catch(e){}ready.current=true;})();},[user]);
  useEffect(()=>{const pf=s.prefs||{},dark=(pf.theme||'dark')==='auto'?matchMedia('(prefers-color-scheme: dark)').matches:(pf.theme||'dark')==='dark',el=document.documentElement;
   el.dataset.theme=dark?'dark':'light';el.style.setProperty('--ac',pf.accent||'#0a84ff');el.classList.toggle('gd',/Chrome|Edg/.test(navigator.userAgent));},[s.prefs]);
  useEffect(()=>{const h=e=>{if(e.key==='Escape'){setMenu(false);setOrder(null);setDrawer(null);setCfg(false);}else if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){const i=document.getElementById('q');if(i){e.preventDefault();i.focus();}}};addEventListener('keydown',h);return()=>removeEventListener('keydown',h);},[]);
@@ -309,22 +314,26 @@ function App(){
   <header className="panel lens rounded-xl px-4 py-3 sticky top-2 z-30 flex flex-wrap items-center justify-between gap-3 mb-4">
    <div><h1 className="text-xl font-semibold">DSE Portfolio Simulator</h1><div className="text-xs text-slate-400">Day {s.day+1} &middot; {dateOf(s.day)} &middot; {isLive?`LIVE DSE data as of ${s.liveAsOf||'n/a'}${s.marketOpen?'':' (market closed)'}${s.stale?' (stale)':''}`:'simulated prices'}</div></div>
    <div className="flex gap-2 items-center relative"><button onClick={()=>{setUseLive(!!api);setCfg(true)}} className="panel rounded-md px-3 py-2 text-sm text-slate-300 flex items-center gap-2 hover:border-slate-500"><Ic d={I.reset}/>Reset</button>
-    {isLive?<button onClick={poll} className="bg-sky-600 hover:bg-sky-500 rounded-md px-4 py-2 text-sm font-medium flex items-center gap-2"><Ic d={I.reset}/>Refresh prices</button>:<button onClick={advance} className="bg-sky-600 hover:bg-sky-500 rounded-md px-4 py-2 text-sm font-medium flex items-center gap-2"><Ic d={I.ff}/>Next trading day</button>}
+    {isLive?<button onClick={()=>poll(true)} className="bg-sky-600 hover:bg-sky-500 rounded-md px-4 py-2 text-sm font-medium flex items-center gap-2"><Ic d={I.reset}/>Refresh prices</button>:<button onClick={advance} className="bg-sky-600 hover:bg-sky-500 rounded-md px-4 py-2 text-sm font-medium flex items-center gap-2"><Ic d={I.ff}/>Next trading day</button>}
     <button onClick={()=>setMenu(m=>!m)} title="Settings" className="panel rounded-full w-10 h-10 flex items-center justify-center"><Ic d={I.sliders} s={18}/></button>
-    {menu&&<><div className="fixed inset-0 z-40" onClick={()=>setMenu(false)}/><div className="panel lens absolute right-0 top-12 z-50 w-[19rem] max-w-[90vw] rounded-xl p-4 text-sm space-y-4 text-left">
+</div></header>
+    {menu&&<><div className="fixed inset-0 z-40 scrim" onClick={()=>setMenu(false)}/><div className="panel lens menu fixed right-3 top-20 z-50 max-h-[80vh] overflow-y-auto w-[19rem] max-w-[90vw] rounded-xl p-4 text-sm space-y-4 text-left">
      <div className="flex justify-between items-center"><b>Settings</b><button onClick={()=>setMenu(false)} className="text-slate-400"><Ic d={I.x}/></button></div>
      <div><div className="text-xs text-slate-400 mb-1">Theme</div><Seg opts={[['dark','Dark'],['light','Light'],['auto','Auto']]} val={P.theme||'dark'} on={v=>setPref('theme',v)}/></div>
      <div><div className="text-xs text-slate-400 mb-1">Accent</div><div className="flex gap-2">{['#0a84ff','#30d158','#ff9f0a','#ff375f','#bf5af2','#64d2ff'].map(c=><button key={c} onClick={()=>setPref('accent',c)} className="w-7 h-7 rounded-full" style={{background:c,outline:(P.accent||'#0a84ff')===c?'2px solid var(--tx)':'none',outlineOffset:2}}/>)}</div></div>
      <div><div className="text-xs text-slate-400 mb-1">Number format</div><Seg opts={[['en-US','1,234,567'],['en-IN','12,34,567']]} val={P.nf||'en-US'} on={v=>setPref('nf',v)}/></div>
      <div><div className="text-xs text-slate-400 mb-1">Currency symbol</div><Seg opts={[['Tk','Tk'],['৳','৳']]} val={P.cur||'Tk'} on={v=>setPref('cur',v)}/></div>
      <div><div className="text-xs text-slate-400 mb-1">Add money (counts as capital)</div><div className="flex gap-2"><input value={dep} onChange={e=>setDep(e.target.value)} type="number" placeholder="Amount" className="num flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/><button onClick={addMoney} className="bg-sky-600 rounded-md px-4 text-white">Add</button></div></div>
-     <div><div className="text-xs text-slate-400 mb-1">Profile {srv?'(saved in database)':'(saved in this browser only)'}</div>
-      {srv?<div className="flex gap-2"><select value={user} onChange={e=>switchUser(e.target.value)} className="flex-1 min-w-0">{[...new Set([user,...users])].map(u=><option key={u}>{u}</option>)}</select>
-       <input value={nu} onChange={e=>setNu(e.target.value)} placeholder="New user" className="w-24 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/><button onClick={newUser} className="bg-sky-600 rounded-md px-3 text-white">+</button></div>
-      :<div className="text-xs text-slate-500">Run server.py to store every user's data in simulator.db.</div>}</div>
-     <div className="text-[11px] text-slate-500">Shortcuts: / search stocks &middot; Esc closes panels</div></div></>}</div></header>
+     <div><div className="text-xs text-slate-400 mb-1">Account {srv?'(saved in database)':'(saved in this browser only)'}</div>
+      {!srv?<div className="text-xs text-slate-500">Run server.py to use accounts.</div>:user==='default'?<div className="space-y-2"><div className="text-xs text-slate-500">You are on the shared test account "default". Create your own account to keep your data private.</div>
+       <input value={nu} onChange={e=>setNu(e.target.value)} placeholder="Username" className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/>
+       <input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="Password" className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/>
+       <div className="flex gap-2"><button onClick={()=>auth('login')} className="flex-1 panel rounded-md py-1.5">Sign in</button><button onClick={()=>auth('register')} className="flex-1 bg-sky-600 text-white rounded-md py-1.5">Create account</button></div></div>
+      :<div className="flex items-center justify-between"><span>Signed in as <b>{user}</b></span><button onClick={signOut} className="panel rounded-md px-3 py-1">Sign out</button></div>}</div>
+     <div className="text-[11px] text-slate-500">Shortcuts: / search stocks &middot; Esc closes panels</div></div></>}
   {api&&!isLive&&<div className="mb-3 text-sm bg-sky-950/60 border border-sky-800 rounded-md px-3 py-2 flex flex-wrap items-center justify-between gap-2"><span>Live DSE prices are available (as of {api.asOf||'latest'}). Your current portfolio uses simulated prices.</span>
    <button onClick={()=>{setCap(String(s.startCash));setUseLive(true);setCfg(true)}} className="bg-sky-600 hover:bg-sky-500 rounded px-3 py-1 text-xs font-medium">Start live portfolio</button></div>}
+  {isLive&&s.behind&&<div className="mb-3 text-sm text-amber-200 bg-amber-950/60 border border-amber-800 rounded-md px-3 py-2">These prices are from {s.liveAsOf}. DSE's data source has not published {s.expected} yet. Press Refresh later.</div>}
   {isLive&&liveErr&&<div className="mb-3 text-sm text-amber-200 bg-amber-950/60 border border-amber-800 rounded-md px-3 py-2">Can't reach the price API right now. Showing the last prices received.</div>}
   <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
    <Stat label="Cash balance" value={tk(s.cash)}/>
@@ -415,10 +424,10 @@ function App(){
   <p className="text-xs text-slate-600 mt-4">{isLive?'Live DSE prices via your API.':'Prices are simulated.'} Commission 0.35% on each trade. Settlement: T+2 for A/B/N, T+3 for Z. Circuit limits are &plusmn;10% of the previous close.</p>
   {order&&<OrderModal stock={px[order.m.symbol]} side0={order.side} s={s} onClose={()=>setOrder(null)} onSubmit={trade}/>}
   {drawer&&<Drawer stock={px[drawer]} onClose={()=>setDrawer(null)} onTrade={side=>setOrder({m:px[drawer],side})} held={holds.find(h=>h.symbol===drawer)}/>}
-  {csvView&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3" onClick={()=>setCsvView('')}><div className="panel rounded-xl w-full max-w-2xl p-4" onClick={e=>e.stopPropagation()}>
+  {csvView&&<div className="fixed inset-0 z-50 flex items-center justify-center scrim p-3" onClick={()=>setCsvView('')}><div className="panel rounded-xl w-full max-w-2xl p-4" onClick={e=>e.stopPropagation()}>
    <div className="text-sm mb-2">Direct download isn't available here. Copy this text and save it as a file (.csv for transactions, .html for the report).</div><textarea readOnly value={csvView} onFocus={e=>e.target.select()} className="num w-full h-64 bg-slate-900 border border-slate-700 rounded-md p-2 text-xs"/>
    <button onClick={()=>setCsvView('')} className="mt-2 panel rounded-md px-4 py-2 text-sm">Close</button></div></div>}
-  {cfg&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3" onClick={()=>setCfg(false)}><div className="panel rounded-xl w-full max-w-sm p-5" onClick={e=>e.stopPropagation()}>
+  {cfg&&<div className="fixed inset-0 z-50 flex items-center justify-center scrim p-3" onClick={()=>setCfg(false)}><div className="panel rounded-xl w-full max-w-sm p-5" onClick={e=>e.stopPropagation()}>
    <div className="font-semibold mb-1">Reset simulation</div><p className="text-sm text-slate-400 mb-3">This clears all holdings and transactions and starts again from day 1 with your chosen starting capital.</p>
    <label className="text-xs text-slate-400">Starting capital (Tk)</label>
    <input value={cap} onChange={e=>setCap(e.target.value)} type="number" className="num w-full mt-1 mb-4 bg-slate-900 border border-slate-700 rounded-md px-3 py-2 outline-none focus:border-sky-500"/>

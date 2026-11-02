@@ -3,7 +3,7 @@ DSE live API + database for the portfolio simulator.   python server.py   ->  ht
 """
 import threading
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from dse_data import TTLCache, fetch_market, fetch_history, market_open, load_categories
@@ -25,9 +25,9 @@ def start_collector():
 
 
 @app.get("/api/dse-live")
-def dse_live(symbols: str = Query("")):
+def dse_live(symbols: str = Query(""), fresh: bool = False):
     try:
-        data = current()
+        data = market.get(10) if fresh else current()
     except Exception as e:
         raise HTTPException(502, str(e))
     want = {s.strip().upper() for s in symbols.split(",") if s.strip()}
@@ -53,28 +53,40 @@ def dse_history(symbol: str):
         raise HTTPException(502, str(e))
 
 
-# ---- users and portfolio state (database) ----
-@app.get("/api/users")
-def users():
-    return store.users()
+# ---- accounts and portfolio state (database) ----
+@app.post("/api/register")
+async def register(req: Request):
+    j = await req.json()
+    try:
+        name, tok = store.register(str(j.get("name", "")), str(j.get("password", "")))
+    except KeyError as e:
+        raise HTTPException(409, e.args[0])
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"name": name, "token": tok}
 
-@app.post("/api/users")
-async def new_user(req: Request):
-    name = str((await req.json()).get("name", "")).strip()[:40]
-    if not name:
-        raise HTTPException(400, "name required")
-    store.add_user(name)
-    return {"ok": True}
+@app.post("/api/login")
+async def login(req: Request):
+    j = await req.json()
+    try:
+        name, tok = store.login(str(j.get("name", "")), str(j.get("password", "")))
+    except PermissionError as e:
+        raise HTTPException(401, str(e))
+    return {"name": name, "token": tok}
 
 @app.get("/api/state/{user}")
-def get_state(user: str):
+def get_state(user: str, x_token: str = Header("")):
+    if not store.allowed(user, x_token):
+        raise HTTPException(401, "sign in required")
     js = store.get_state(user)
     if js is None:
         raise HTTPException(404, "no saved state")
     return Response(js, media_type="application/json")
 
 @app.put("/api/state/{user}")
-async def put_state(user: str, req: Request):
+async def put_state(user: str, req: Request, x_token: str = Header("")):
+    if not store.allowed(user, x_token):
+        raise HTTPException(401, "sign in required")
     try:
         store.put_state(user[:40], (await req.body()).decode())
     except ValueError:
