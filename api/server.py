@@ -127,7 +127,7 @@ def health():
 
 
 HERE = Path(__file__).resolve().parent
-INDEX = next((p for p in (HERE / "public" / "index.html", HERE / "index.html") if p.exists()), None)
+INDEX = next((p for p in (HERE / "public" / "index.html", HERE / "index.html", HERE.parent / "public" / "index.html", HERE.parent / "index.html") if p.exists()), None)
 
 @app.get("/")
 def home():

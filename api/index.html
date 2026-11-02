@@ -236,7 +236,7 @@ function History({px,srv}){
    {list.slice(0,400).map(r=><tr key={r.symbol}><td><b>{r.symbol}</b></td><td className="num">{fmt(r.ltp)}</td><td className="num">{fmt(r.ycp)}</td><td className={`num ${cls(r.chg)}`}>{sg(r.chg)}%</td><td className="num">{fmt(r.high)}</td><td className="num">{fmt(r.low)}</td><td className="num">{fmt(r.volume,0)}</td><td className="num">{r.now?fmt(r.now):'-'}</td></tr>)}</tbody></table></div></div>;}
 function App(){
  const [s,setS]=useState(load);DATES=s.dates||{};CFG=s.prefs||{};const [tab,setTab]=useState('overview');const [q,setQ]=useState('');const [cat,setCat]=useState('All');
- const [srv,setSrv]=useState(false),[users,setUsers]=useState([]),[menu,setMenu]=useState(false),[dep,setDep]=useState(''),[nu,setNu]=useState(''),[pw,setPw]=useState(''),[sort,setSort]=useState({k:'symbol',d:1});
+ const [srv,setSrv]=useState(false),[users,setUsers]=useState([]),[menu,setMenu]=useState(false),[dep,setDep]=useState(''),[nu,setNu]=useState(''),[pw,setPw]=useState(''),[temp,setTemp]=useState(false),[sort,setSort]=useState({k:'symbol',d:1});
  const [user,setUser]=useState(()=>{try{return localStorage.getItem('dse-user')||'default'}catch(e){return 'default'}});const ready=useRef(false);
  const [api,setApi]=useState(null);const [liveErr,setLiveErr]=useState(false);const [useLive,setUseLive]=useState(false);const rpt=useRef(null);
  const isLive=s.mode==='live';
@@ -304,7 +304,7 @@ function App(){
  async function auth(kind){const n=nu.trim();if(!n||!pw){say('Enter a username and password');return;}
   try{const r=await fetch('/api/'+kind,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,password:pw})});const j=await r.json().catch(()=>({}));
    if(!r.ok){say(j.detail||'Failed');return;}localStorage.setItem('dse-token',j.token);setNu('');setPw('');switchUser(j.name);}catch(e){say('Server not reachable');}}
- useEffect(()=>{ready.current=false;(async()=>{try{const r=await fetch('/api/state/'+encodeURIComponent(user),{headers:authH()});setSrv(true);if(r.ok)setS(await r.json());else if(r.status===401){signOut();return;}else if(r.status!==404)throw 0;}catch(e){}ready.current=true;})();},[user]);
+ useEffect(()=>{ready.current=false;(async()=>{try{const r=await fetch('/api/state/'+encodeURIComponent(user),{headers:authH()});setSrv(true);fetch('/healthz').then(x=>x.json()).then(j=>setTemp(!!j.dataIsTemporary)).catch(()=>{});if(r.ok)setS(await r.json());else if(r.status===401){signOut();return;}else if(r.status!==404)throw 0;}catch(e){}ready.current=true;})();},[user]);
  useEffect(()=>{const pf=s.prefs||{},dark=(pf.theme||'dark')==='auto'?matchMedia('(prefers-color-scheme: dark)').matches:(pf.theme||'dark')==='dark',el=document.documentElement;
   el.dataset.theme=dark?'dark':'light';el.style.setProperty('--ac',pf.accent||'#0a84ff');el.classList.toggle('gd',/Chrome|Edg/.test(navigator.userAgent));},[s.prefs]);
  useEffect(()=>{const h=e=>{if(e.key==='Escape'){setMenu(false);setOrder(null);setDrawer(null);setCfg(false);}else if(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){const i=document.getElementById('q');if(i){e.preventDefault();i.focus();}}};addEventListener('keydown',h);return()=>removeEventListener('keydown',h);},[]);
@@ -325,6 +325,7 @@ function App(){
      <div><div className="text-xs text-slate-400 mb-1">Currency symbol</div><Seg opts={[['Tk','Tk'],['৳','৳']]} val={P.cur||'Tk'} on={v=>setPref('cur',v)}/></div>
      <div><div className="text-xs text-slate-400 mb-1">Add money (counts as capital)</div><div className="flex gap-2"><input value={dep} onChange={e=>setDep(e.target.value)} type="number" placeholder="Amount" className="num flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/><button onClick={addMoney} className="bg-sky-600 rounded-md px-4 text-white">Add</button></div></div>
      <div><div className="text-xs text-slate-400 mb-1">Account {srv?'(saved in database)':'(saved in this browser only)'}</div>
+      {temp&&<div className="text-xs text-amber-300 mb-2">Warning: this server's storage is temporary. Accounts and portfolios are lost when it restarts. Download your Final report regularly.</div>}
       {!srv?<div className="text-xs text-slate-500">Run server.py to use accounts.</div>:user==='default'?<div className="space-y-2"><div className="text-xs text-slate-500">You are on the shared test account "default". Create your own account to keep your data private.</div>
        <input value={nu} onChange={e=>setNu(e.target.value)} placeholder="Username" className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/>
        <input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="Password" className="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-1.5 outline-none"/>

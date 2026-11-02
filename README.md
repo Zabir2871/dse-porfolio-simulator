@@ -41,3 +41,11 @@ Created automatically next to server.py. Tables: `users`, `states` (each user's 
 - `default` is a shared test account with no password. Create your own account in Settings: usernames are unique (case-insensitive), passwords are stored salted and hashed, and each account's data can only be read with its own sign-in token. Run the server on localhost only.
 - Prices refresh when the page loads and when you press Refresh (no background polling in the browser).
 - `python diagnose.py` shows the date DSE's site says its prices are from, whether the new JSON API is reachable, and which source the server uses. If the app shows an amber "These prices are from ..." banner, DSE's feed itself has not published newer prices.
+
+## Vercel
+Vercel's disk is read-only and temporary, so accounts and portfolios do not persist there (the app warns you). If `/` returns the JSON "API is running" message,
+serve the page statically and send only the API to Python, e.g. `vercel.json`:
+```json
+{ "rewrites": [ { "source": "/api/(.*)", "destination": "/api/server" } ] }
+```
+with the page at `public/index.html` in the repo root. For real persistence use your own computer, a host with a disk, or move the database to Supabase.
